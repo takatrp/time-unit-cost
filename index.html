@@ -32,7 +32,7 @@
     input[type="text"], input[type="number"], select{ width:100%; padding:7px 9px; font-size:13.5px; border-radius:9px; border:1px solid var(--line); background:#f9fbfd; outline:none; transition:border .15s, box-shadow .15s, background .15s; }
     input[type="text"]:focus, input[type="number"]:focus, select:focus{ border-color:var(--accent); box-shadow:0 0 0 3px rgba(58,162,200,.18); background:#fff; }
 
-    /* スライダー（給与のみ） */
+    /* スライダー（給与・所要時間） */
     .slider-row{display:grid; grid-template-columns:1fr; gap:3px;}
     input[type="range"]{ width:100%; height:26px; -webkit-appearance:none; appearance:none; background:transparent; }
     input[type="range"]::-webkit-slider-runnable-track{ height:6px; background:linear-gradient(90deg,var(--accent) 0%, var(--accent-strong) 100%); border-radius:999px; opacity:.35; }
@@ -43,9 +43,6 @@
     .seg{display:flex; gap:6px;}
     .seg button{flex:1; border:1px solid var(--line); background:#f3f7fb; color:#111; padding:6px 8px; border-radius:9px; cursor:pointer; font-weight:600; font-size:13.5px;}
     .seg button.active{background:linear-gradient(180deg,var(--accent),var(--accent-strong)); color:#fff; border-color:transparent;}
-
-    .chips{display:flex; flex-wrap:wrap; gap:5px;}
-    .chip{border:1px solid var(--line); background:#f1f7fb; border-radius:999px; padding:4px 7px; font-size:11.5px; cursor:pointer;}
 
     .result{ display:grid; grid-template-columns:1fr; gap:8px; padding:10px; }
     .tile{border:1px solid var(--line); border-radius:9px; padding:8px; background:linear-gradient(180deg,#ffffff 0%, #f7fbfe 100%);}    
@@ -119,13 +116,12 @@
 
         <div class="section">
           <h2>3) 所要時間</h2>
-          <div class="row"><div class="label">所要時間（h）</div><input id="useHours" type="number" min="0" step="0.25" value="1.0" /></div>
-          <div class="chips" id="quickChips" aria-label="クイック入力">
-            <span class="chip" data-h="0.25">15分</span>
-            <span class="chip" data-h="0.5">30分</span>
-            <span class="chip" data-h="1">1時間</span>
-            <span class="chip" data-h="2">2時間</span>
-            <span class="chip" data-h="3">3時間</span>
+          <div class="row">
+            <div class="label">所要時間（h）</div>
+            <div class="slider-row">
+              <input id="useHours" type="number" min="0" step="0.25" value="1.0" />
+              <input id="useHoursRange" type="range" min="0" max="12" step="0.25" />
+            </div>
           </div>
         </div>
       </div>
@@ -195,7 +191,7 @@
   function init(){
     if(booted) return; booted=true;
     try{
-      const VERSION = 'r7';
+      const VERSION = 'r8';
       const SOC_RATE = 16.0; // 事業主負担の標準率（概算）
       const el = (id)=>document.getElementById(id);
       const fmtJPY = (n)=> new Intl.NumberFormat('ja-JP',{style:'currency', currency:'JPY', maximumFractionDigits:0}).format(n);
@@ -212,6 +208,7 @@
       const costFor=(h)=> Math.round(hourly()*(Number(h)||0));
 
       function syncSalaryRange(){ const r=el('salaryRange'); if(!r) return; if(state.mode==='monthly'){ r.min=100000; r.max=2000000; r.step=1000; } else { r.min=1000000; r.max=30000000; r.step=10000; } r.value=String(baseSalary()); }
+      function syncUseHoursRange(){ const r=el('useHoursRange'); if(!r) return; r.min=0; r.max=12; r.step=0.25; r.value=String(state.useHours||0); }
 
       function updateView(){
         el('salaryLabel').textContent = state.mode==='monthly'? '月給（税引前）':'年収（税引前）';
@@ -220,6 +217,7 @@
         el('socRateLabel').textContent = `${SOC_RATE}%`;
         formatMoneyToInput(baseSalary());
         syncSalaryRange();
+        syncUseHoursRange();
         el('vhSalary').textContent = fmtJPY(baseSalary());
         const wh = state.mode==='monthly'? monthlyHours(): yearlyHours();
         el('vhWorkH').textContent = (wh||0).toLocaleString('ja-JP') + ' 時間/' + (state.mode==='monthly'? '月':'年');
@@ -254,7 +252,7 @@
 
       function resetAll(){
         Object.assign(state,{mode:'monthly', salary:300000, overheadSoc:false, mDays:20, mHoursPerDay:8, mHours:160, yDays:240, yHoursPerDay:8, yHours:1920, useHours:1});
-        formatMoneyToInput(state.salary); el('overheadSoc').checked=false; el('mDays').value='20'; el('mHoursPerDay').value='8'; el('mHours').value='160'; el('yDays').value='240'; el('yHoursPerDay').value='8'; el('yHours').value='1920'; el('useHours').value='1.0'; updateView(); save(); showToast('リセットしました');
+        formatMoneyToInput(state.salary); el('overheadSoc').checked=false; el('mDays').value='20'; el('mHoursPerDay').value='8'; el('mHours').value='160'; el('yDays').value='240'; el('yHoursPerDay').value='8'; el('yHours').value='1920'; el('useHours').value='1.0'; syncUseHoursRange(); updateView(); save(); showToast('リセットしました');
       }
 
       // events
@@ -275,30 +273,31 @@
       el('yHoursPerDay').addEventListener('input',(e)=>{ state.yHoursPerDay=Number(e.target.value)||0; recalcYearly(); updateView(); save(); });
       el('yHours').addEventListener('input',(e)=>{ state.yHours=Number(e.target.value)||0; updateView(); save(); });
 
-      el('quickChips').addEventListener('click', (e)=>{ const t=e.target.closest('.chip'); if(!t) return; const v=Number(t.dataset.h)||0; el('useHours').value=v; state.useHours=v; updateView(); save(); });
-      el('useHours').addEventListener('input', (e)=>{ state.useHours=Number(e.target.value)||0; updateView(); save(); });
+      // 所要時間：数値入力とスライダーの双方向連動
+      el('useHours').addEventListener('input', (e)=>{ state.useHours=Number(e.target.value)||0; const r=el('useHoursRange'); if(r) r.value=String(state.useHours); updateView(); save(); });
+      el('useHoursRange').addEventListener('input', (e)=>{ state.useHours=Number(e.target.value)||0; el('useHours').value=String(state.useHours); updateView(); save(); });
 
       el('copyBtn').addEventListener('click', copySummary);
       el('resetBtn').addEventListener('click', resetAll);
 
       // persist
-      const KEY='rate_tool_r7';
+      const KEY='rate_tool_r8';
       function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
-      function load(){ try{ const s = JSON.parse(localStorage.getItem(KEY)||localStorage.getItem('rate_tool_r6')||'null'); if(s){ Object.assign(state,s); } }catch(e){} }
+      function load(){ try{ const s = JSON.parse(localStorage.getItem(KEY)||localStorage.getItem('rate_tool_r7')||'null'); if(s){ Object.assign(state,s); } }catch(e){} }
 
       load();
       formatMoneyToInput(state.salary);
       el('overheadSoc').checked=!!state.overheadSoc;
       el('mDays').value=state.mDays; el('mHoursPerDay').value=state.mHoursPerDay; el('mHours').value=state.mHours;
       el('yDays').value=state.yDays; el('yHoursPerDay').value=state.yHoursPerDay; el('yHours').value=state.yHours;
-      el('useHours').value=state.useHours;
+      el('useHours').value=state.useHours; syncUseHoursRange();
       syncSalaryRange();
       updateView();
 
       const year = new Date().getFullYear();
       el('creditText').textContent = `Copyright (c) ${year} 税理士法人松本会計事務所 All Rights Reserved. / ${VERSION}`;
 
-      // 可視のヘルスチェック（デバッグ用）
+      // デバッグバッジ
       const hash = (location.hash||'').toLowerCase();
       if(hash.includes('debug')){
         const badge=document.createElement('div');

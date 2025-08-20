@@ -9,7 +9,7 @@
     *{box-sizing:border-box}
     html,body{height:100%}
     body{ margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic","Meiryo",Arial,sans-serif; color:var(--ink); background:var(--bg);}   
-    .container{max-width:1100px; margin:10px auto; padding:0 10px;} /* 余白さらに圧縮 */
+    .container{max-width:1100px; margin:10px auto; padding:0 10px;} /* 余白圧縮 */
     header{display:flex; gap:6px; align-items:center; margin-bottom:6px;}
     .badge{background:linear-gradient(180deg,var(--accent),var(--accent-strong)); color:#fff; padding:3px 7px; border-radius:999px; font-size:10.5px;}
     h1{font-size:17px; margin:0; font-weight:700; letter-spacing:.3px; line-height:1.05;}
@@ -80,6 +80,7 @@
             <div class="seg" role="tablist" aria-label="給与の単位">
               <button id="btnMonthly" class="active" aria-selected="true">月給</button>
               <button id="btnYearly" aria-selected="false">年収</button>
+              <button id="btnHourly" aria-selected="false">時給</button>
             </div>
           </div>
           <div class="row">
@@ -100,16 +101,16 @@
 
         <div class="section" id="monthlyBlock">
           <h2>2) 稼働時間（<span style="color:var(--accent-strong)">月給ベース</span>）</h2>
-          <div class="row"><div class="label">月の稼働日数</div><input id="mDays" type="number" min="1" step="1" value="20" /></div>
-          <div class="row"><div class="label">1日の労働時間</div><input id="mHoursPerDay" type="number" min="0.1" step="0.25" value="8" /></div>
+          <div class="row"><div class="label">月の稼働日数</div><input id="mDays" type="number" min="1" max="31" step="1" value="20" /></div>
+          <div class="row"><div class="label">1日の労働時間</div><input id="mHoursPerDay" type="number" min="0.1" max="24" step="0.25" value="8" /></div>
           <div class="row"><div class="label">月の稼働時間</div><input id="mHours" type="number" min="1" step="1" value="160" /></div>
           <div class="help">※ 上の2項目を変更すると自動で再計算（手入力も可）。</div>
         </div>
 
         <div class="section" id="yearlyBlock" style="display:none">
           <h2>2) 稼働時間（<span style="color:var(--accent-strong)">年収ベース</span>）</h2>
-          <div class="row"><div class="label">年間の稼働日数</div><input id="yDays" type="number" min="1" step="1" value="240" /></div>
-          <div class="row"><div class="label">1日の労働時間</div><input id="yHoursPerDay" type="number" min="0.1" step="0.25" value="8" /></div>
+          <div class="row"><div class="label">年間の稼働日数</div><input id="yDays" type="number" min="1" max="366" step="1" value="240" /></div>
+          <div class="row"><div class="label">1日の労働時間</div><input id="yHoursPerDay" type="number" min="0.1" max="24" step="0.25" value="8" /></div>
           <div class="row"><div class="label">年間の稼働時間</div><input id="yHours" type="number" min="1" step="1" value="1920" /></div>
           <div class="help">※ 上の2項目を変更すると自動で再計算（手入力も可）。</div>
         </div>
@@ -185,13 +186,13 @@
   </div>
 
 <script>
-// できるだけ堅牢に初期化（DOMContentLoaded / 即時 の両対応）
+// 初期化（DOMContentLoaded/即時の両対応）
 (function(){
   let booted=false;
   function init(){
     if(booted) return; booted=true;
     try{
-      const VERSION = 'r8';
+      const VERSION = 'r9';
       const SOC_RATE = 16.0; // 事業主負担の標準率（概算）
       const el = (id)=>document.getElementById(id);
       const fmtJPY = (n)=> new Intl.NumberFormat('ja-JP',{style:'currency', currency:'JPY', maximumFractionDigits:0}).format(n);
@@ -199,29 +200,45 @@
       const state = { mode:'monthly', salary:300000, overheadSoc:false, mDays:20, mHoursPerDay:8, mHours:160, yDays:240, yHoursPerDay:8, yHours:1920, useHours:1 };
 
       function showToast(msg){ const t=document.createElement('div'); t.className='toast'; t.textContent=msg; document.body.appendChild(t); setTimeout(()=>{ t.remove(); }, 1600); }
-
+      function clamp(v,min,max){ v=Number(v)||0; if(v<min) v=min; if(v>max) v=max; return v; }
       function parseMoney(text){ const cleaned = String(text||'').replace(/[^0-9.]/g,''); return Number(cleaned||0); }
       function formatMoneyToInput(num){ const s=el('salary'); if(s) s.value = (Number(num)||0).toLocaleString('ja-JP'); }
       const monthlyHours=()=> Number(state.mHours)||0; const yearlyHours=()=> Number(state.yHours)||0; const baseSalary=()=> Number(state.salary)||0;
       const loadedSalary=()=> baseSalary() * (1 + (state.overheadSoc? SOC_RATE/100 : 0));
-      function hourly(){ const denom = state.mode==='monthly'? monthlyHours(): yearlyHours(); const rate= denom>0? loadedSalary()/denom:0; return Math.round(rate); }
-      const costFor=(h)=> Math.round(hourly()*(Number(h)||0));
+      function hourlyRate(){ // 時間単価（円/h）
+        const denom = state.mode==='monthly' ? monthlyHours() : state.mode==='yearly' ? yearlyHours() : 1; // 時給は1時間で割る
+        const rate= denom>0? loadedSalary()/denom:0; return Math.round(rate);
+      }
+      const costFor=(h)=> Math.round(hourlyRate()*(Number(h)||0));
 
-      function syncSalaryRange(){ const r=el('salaryRange'); if(!r) return; if(state.mode==='monthly'){ r.min=100000; r.max=2000000; r.step=1000; } else { r.min=1000000; r.max=30000000; r.step=10000; } r.value=String(baseSalary()); }
+      function syncSalaryRange(){
+        const r=el('salaryRange'); if(!r) return;
+        if(state.mode==='monthly'){ r.min=100000; r.max=2000000; r.step=1000; }
+        else if(state.mode==='yearly'){ r.min=1000000; r.max=30000000; r.step=10000; }
+        else { /* 時給 */ r.min=800; r.max=10000; r.step=10; }
+        r.value=String(baseSalary());
+      }
       function syncUseHoursRange(){ const r=el('useHoursRange'); if(!r) return; r.min=0; r.max=12; r.step=0.25; r.value=String(state.useHours||0); }
 
+      function updateVisibility(){
+        // 2) 稼働時間の表示制御：時給のときは非表示
+        el('monthlyBlock').style.display = state.mode==='monthly'? '' : 'none';
+        el('yearlyBlock').style.display  = state.mode==='yearly' ? '' : 'none';
+      }
+
       function updateView(){
-        el('salaryLabel').textContent = state.mode==='monthly'? '月給（税引前）':'年収（税引前）';
-        el('baseKind').textContent = state.mode==='monthly'? '月給':'年収';
+        el('salaryLabel').textContent = state.mode==='monthly'? '月給（税引前）' : state.mode==='yearly'? '年収（税引前）' : '時給（税引前）';
+        el('baseKind').textContent = state.mode==='monthly'? '月給' : state.mode==='yearly'? '年収' : '時給';
         el('vhOverheadSoc').textContent = state.overheadSoc ? `あり（${SOC_RATE}%）` : 'なし';
         el('socRateLabel').textContent = `${SOC_RATE}%`;
         formatMoneyToInput(baseSalary());
         syncSalaryRange();
         syncUseHoursRange();
+        updateVisibility();
         el('vhSalary').textContent = fmtJPY(baseSalary());
-        const wh = state.mode==='monthly'? monthlyHours(): yearlyHours();
-        el('vhWorkH').textContent = (wh||0).toLocaleString('ja-JP') + ' 時間/' + (state.mode==='monthly'? '月':'年');
-        const h = hourly();
+        const wh = state.mode==='monthly'? monthlyHours() : state.mode==='yearly'? yearlyHours() : null;
+        el('vhWorkH').textContent = (wh==null)? '—' : (wh.toLocaleString('ja-JP') + ' 時間/' + (state.mode==='monthly'? '月':'年'));
+        const h = hourlyRate();
         el('hourly').textContent = fmtJPY(h) + ' / 時間';
         el('perMin').textContent = fmtJPY(Math.round(h/60));
         const useH = Number(state.useHours)||0;
@@ -231,16 +248,18 @@
         el('c60').textContent = fmtJPY(costFor(1));
         el('btnMonthly').classList.toggle('active', state.mode==='monthly');
         el('btnYearly').classList.toggle('active', state.mode==='yearly');
-        el('monthlyBlock').style.display = state.mode==='monthly'? '':'none';
-        el('yearlyBlock').style.display = state.mode==='yearly'? '':'none';
+        el('btnHourly').classList.toggle('active', state.mode==='hourly');
       }
 
       function copySummary(){
-        const txt=[`【時間単価・コスト可視化】`,`給与ベース：${state.mode==='monthly'?'月給':'年収'}`,`対象給与：${fmtJPY(baseSalary())}`,
+        const base = state.mode==='monthly'? '月給' : state.mode==='yearly'? '年収' : '時給';
+        const workLine = state.mode==='monthly' ? `稼働時間：${state.mHours.toLocaleString('ja-JP')} 時間/月` : state.mode==='yearly' ? `稼働時間：${state.yHours.toLocaleString('ja-JP')} 時間/年` : `稼働時間：—（時給ベース）`;
+        const txt=[`【時間単価・コスト可視化】`,`給与ベース：${base}`,`対象給与：${fmtJPY(baseSalary())}`,
           `社保上乗せ：${state.overheadSoc?`あり（${SOC_RATE}%）`:'なし'}`,
-          `稼働時間：${(state.mode==='monthly'?state.mHours:state.yHours).toLocaleString('ja-JP')} 時間/${state.mode==='monthly'?'月':'年'}`,
-          `時間単価：${fmtJPY(hourly())} /h`,`1分あたり：${fmtJPY(Math.round(hourly()/60))}`,
-          `15分：${fmtJPY(costFor(0.25))} ／ 30分：${fmtJPY(costFor(0.5))} ／ 1時間：${fmtJPY(costFor(1))}`,`(ver ${VERSION})`].join('\n');
+          workLine,
+          `時間単価：${fmtJPY(hourlyRate())} /h`,`1分あたり：${fmtJPY(Math.round(hourlyRate()/60))}`,
+          `15分：${fmtJPY(costFor(0.25))} ／ 30分：${fmtJPY(costFor(0.5))} ／ 1時間：${fmtJPY(costFor(1))}`,`(ver ${VERSION})`].join('
+');
         if(navigator.clipboard && navigator.clipboard.writeText){
           navigator.clipboard.writeText(txt).then(()=>{ showToast('コピーしました'); }).catch(()=>{
             const ta=document.createElement('textarea'); ta.value=txt; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); showToast('コピーしました');
@@ -258,19 +277,21 @@
       // events
       el('btnMonthly').addEventListener('click', ()=>{ state.mode='monthly'; updateView(); save(); });
       el('btnYearly').addEventListener('click', ()=>{ state.mode='yearly'; updateView(); save(); });
+      el('btnHourly').addEventListener('click', ()=>{ state.mode='hourly'; updateView(); save(); });
+
       el('salary').addEventListener('input', (e)=>{ state.salary=parseMoney(e.target.value); el('salaryRange').value=String(baseSalary()); updateView(); save(); });
       el('salary').addEventListener('blur', ()=>{ formatMoneyToInput(baseSalary()); });
       el('salaryRange').addEventListener('input', (e)=>{ state.salary=Number(e.target.value)||0; formatMoneyToInput(baseSalary()); updateView(); save(); });
       el('overheadSoc').addEventListener('change', (e)=>{ state.overheadSoc=!!e.target.checked; updateView(); save(); });
 
-      const recalcMonthly=()=>{ state.mHours=(Number(state.mDays)||0)*(Number(state.mHoursPerDay)||0); el('mHours').value=state.mHours; };
-      el('mDays').addEventListener('input',(e)=>{ state.mDays=Number(e.target.value)||0; recalcMonthly(); updateView(); save(); });
-      el('mHoursPerDay').addEventListener('input',(e)=>{ state.mHoursPerDay=Number(e.target.value)||0; recalcMonthly(); updateView(); save(); });
+      const recalcMonthly=()=>{ state.mDays=clamp(state.mDays,1,31); state.mHoursPerDay=clamp(state.mHoursPerDay,0.1,24); state.mHours=(Number(state.mDays)||0)*(Number(state.mHoursPerDay)||0); el('mHours').value=state.mHours; };
+      el('mDays').addEventListener('input',(e)=>{ state.mDays=clamp(e.target.value,1,31); e.target.value=state.mDays; recalcMonthly(); updateView(); save(); });
+      el('mHoursPerDay').addEventListener('input',(e)=>{ state.mHoursPerDay=clamp(e.target.value,0.1,24); e.target.value=state.mHoursPerDay; recalcMonthly(); updateView(); save(); });
       el('mHours').addEventListener('input',(e)=>{ state.mHours=Number(e.target.value)||0; updateView(); save(); });
 
-      const recalcYearly=()=>{ state.yHours=(Number(state.yDays)||0)*(Number(state.yHoursPerDay)||0); el('yHours').value=state.yHours; };
-      el('yDays').addEventListener('input',(e)=>{ state.yDays=Number(e.target.value)||0; recalcYearly(); updateView(); save(); });
-      el('yHoursPerDay').addEventListener('input',(e)=>{ state.yHoursPerDay=Number(e.target.value)||0; recalcYearly(); updateView(); save(); });
+      const recalcYearly=()=>{ state.yDays=clamp(state.yDays,1,366); state.yHoursPerDay=clamp(state.yHoursPerDay,0.1,24); state.yHours=(Number(state.yDays)||0)*(Number(state.yHoursPerDay)||0); el('yHours').value=state.yHours; };
+      el('yDays').addEventListener('input',(e)=>{ state.yDays=clamp(e.target.value,1,366); e.target.value=state.yDays; recalcYearly(); updateView(); save(); });
+      el('yHoursPerDay').addEventListener('input',(e)=>{ state.yHoursPerDay=clamp(e.target.value,0.1,24); e.target.value=state.yHoursPerDay; recalcYearly(); updateView(); save(); });
       el('yHours').addEventListener('input',(e)=>{ state.yHours=Number(e.target.value)||0; updateView(); save(); });
 
       // 所要時間：数値入力とスライダーの双方向連動
@@ -281,10 +302,11 @@
       el('resetBtn').addEventListener('click', resetAll);
 
       // persist
-      const KEY='rate_tool_r8';
+      const KEY='rate_tool_r9';
       function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
-      function load(){ try{ const s = JSON.parse(localStorage.getItem(KEY)||localStorage.getItem('rate_tool_r7')||'null'); if(s){ Object.assign(state,s); } }catch(e){} }
+      function load(){ try{ const s = JSON.parse(localStorage.getItem(KEY)||localStorage.getItem('rate_tool_r8')||'null'); if(s){ Object.assign(state,s); } }catch(e){} }
 
+      // init
       load();
       formatMoneyToInput(state.salary);
       el('overheadSoc').checked=!!state.overheadSoc;
@@ -292,6 +314,7 @@
       el('yDays').value=state.yDays; el('yHoursPerDay').value=state.yHoursPerDay; el('yHours').value=state.yHours;
       el('useHours').value=state.useHours; syncUseHoursRange();
       syncSalaryRange();
+      updateVisibility();
       updateView();
 
       const year = new Date().getFullYear();

@@ -189,7 +189,7 @@
       </div>
     </div>
 
-    <div class="credit"><span id="creditText">Copyright (c) 2025 税理士法人松本会計事務所 All Rights Reserved. / r11</span></div>
+    <div class="credit"><span id="creditText">Copyright (c) 2025 税理士法人松本会計事務所 All Rights Reserved. / r13</span></div>
   </div>
 
 <script>
@@ -199,7 +199,7 @@
   function init(){
     if(booted) return; booted=true;
     try{
-      const VERSION = 'r11';
+      const VERSION = 'r13';
       const SOC_RATE = 16.0; // 事業主負担の標準率（概算）
       const el = (id)=>document.getElementById(id);
       const on = (id,ev,fn)=>{ const e=el(id); if(e) e.addEventListener(ev,fn); };
@@ -207,9 +207,20 @@
 
       const state = { mode:'monthly', salary:300000, overheadSoc:false, mDays:20, mHoursPerDay:8, mHours:160, yDays:240, yHoursPerDay:8, yHours:1920, useHours:1 };
 
+      // 自己診断 & エラーハンドラ（任意で利用可）
+      window.__diag = ()=>({ VERSION, state, found:{
+        btnHourly:!!el('btnHourly'), btnMonthly:!!el('btnMonthly'), btnYearly:!!el('btnYearly'),
+        salary:!!el('salary'), salaryRange:!!el('salaryRange'),
+        monthlyBlock:!!el('monthlyBlock'), yearlyBlock:!!el('yearlyBlock'),
+        useHours:!!el('useHours'), useHoursRange:!!el('useHoursRange')
+      }});
+      window.addEventListener('error', (e)=>{
+        try{ const t=document.createElement('div'); t.className='toast'; t.style.background='#b91c1c'; t.textContent='Script error: '+(e.message||''); document.body.appendChild(t); setTimeout(()=>t.remove(), 4000);}catch(_){}
+      }, {capture:true});
+
       // エラーメッセージ制御
       const errTimers={};
-      function showErr(id,msg){ const e=el(id); if(!e) return; e.textContent=msg; e.style.display='block'; clearTimeout(errTimers[id]); errTimers[id]=setTimeout(()=>{ e.style.display='none'; }, 2400); }
+      function showErr(id,msg){ const e=el(id); if(!e) return; e.textContent=msg; e.style.display='block'; clearTimeout(errTimers[id]); errTimers[id]=setTimeout(()=>{ e.style.display='none'; }, 2600); }
       function hideErr(id){ const e=el(id); if(!e) return; e.style.display='none'; clearTimeout(errTimers[id]); }
 
       function showToast(msg){ const t=document.createElement('div'); t.className='toast'; t.textContent=msg; document.body.appendChild(t); setTimeout(()=>{ t.remove(); }, 1600); }
@@ -268,12 +279,17 @@
       function copySummary(){
         const base = state.mode==='monthly'? '月給' : state.mode==='yearly'? '年収' : '時給';
         const workLine = state.mode==='monthly' ? `稼働時間：${state.mHours.toLocaleString('ja-JP')} 時間/月` : state.mode==='yearly' ? `稼働時間：${state.yHours.toLocaleString('ja-JP')} 時間/年` : `稼働時間：—（時給ベース）`;
-        const txt=[`【時間単価・コスト可視化】`,`給与ベース：${base}`,`対象給与：${fmtJPY(baseSalary())}`,
+        const txt=[
+          '【時間単価・コスト可視化】',
+          `給与ベース：${base}`,
+          `対象給与：${fmtJPY(baseSalary())}`,
           `社保上乗せ：${state.overheadSoc?`あり（${SOC_RATE}%）`:'なし'}`,
           workLine,
-          `時間単価：${fmtJPY(hourlyRate())} /h`,`1分あたり：${fmtJPY(Math.round(hourlyRate()/60))}`,
-          `15分：${fmtJPY(costFor(0.25))} ／ 30分：${fmtJPY(costFor(0.5))} ／ 1時間：${fmtJPY(costFor(1))}`,`(ver ${VERSION})`].join('
-');
+          `時間単価：${fmtJPY(hourlyRate())} /h`,
+          `1分あたり：${fmtJPY(Math.round(hourlyRate()/60))}`,
+          `15分：${fmtJPY(costFor(0.25))} ／ 30分：${fmtJPY(costFor(0.5))} ／ 1時間：${fmtJPY(costFor(1))}`,
+          `(ver ${VERSION})`
+        ].join('\n');
         if(navigator.clipboard && navigator.clipboard.writeText){
           navigator.clipboard.writeText(txt).then(()=>{ showToast('コピーしました'); }).catch(()=>{
             const ta=document.createElement('textarea'); ta.value=txt; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); showToast('コピーしました');
@@ -316,9 +332,9 @@
       on('resetBtn','click', resetAll);
 
       // persist
-      const KEY='rate_tool_r11';
+      const KEY='rate_tool_r13';
       function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
-      function load(){ try{ const s = JSON.parse(localStorage.getItem(KEY)||localStorage.getItem('rate_tool_r10')||'null'); if(s){ Object.assign(state,s); } }catch(e){} }
+      function load(){ try{ const s = JSON.parse(localStorage.getItem(KEY)||localStorage.getItem('rate_tool_r12')||'null'); if(s){ Object.assign(state,s); } }catch(e){} }
 
       // init
       load();
@@ -334,7 +350,7 @@
       const year = new Date().getFullYear();
       const cr=el('creditText'); if(cr) cr.textContent = `Copyright (c) ${year} 税理士法人松本会計事務所 All Rights Reserved. / ${VERSION}`;
 
-      // デバッグバッジ
+      // デバッグバッジ（URL末尾に#debug で表示）
       const hash = (location.hash||'').toLowerCase();
       if(hash.includes('debug')){
         const badge=document.createElement('div');

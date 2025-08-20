@@ -59,6 +59,9 @@
     .credit{ text-align:center; font-size:12px; color:#7b8794; padding:10px 0 12px; }
     .switch{ display:flex; align-items:center; gap:8px; }
 
+    /* エラー */
+    .err{ color:#b91c1c; font-size:11.5px; display:none; }
+
     /* トースト */
     .toast{ position:fixed; left:8px; right:8px; bottom:8px; background:#111; color:#fff; padding:8px 10px; border-radius:8px; opacity:0.95; font-size:12px; z-index:9999; text-align:center; }
   </style>
@@ -102,7 +105,9 @@
         <div class="section" id="monthlyBlock">
           <h2>2) 稼働時間（<span style="color:var(--accent-strong)">月給ベース</span>）</h2>
           <div class="row"><div class="label">月の稼働日数</div><input id="mDays" type="number" min="1" max="31" step="1" value="20" /></div>
+          <div class="help err" id="err_mDays"></div>
           <div class="row"><div class="label">1日の労働時間</div><input id="mHoursPerDay" type="number" min="0.1" max="24" step="0.25" value="8" /></div>
+          <div class="help err" id="err_mHoursPerDay"></div>
           <div class="row"><div class="label">月の稼働時間</div><input id="mHours" type="number" min="1" step="1" value="160" /></div>
           <div class="help">※ 上の2項目を変更すると自動で再計算（手入力も可）。</div>
         </div>
@@ -110,7 +115,9 @@
         <div class="section" id="yearlyBlock" style="display:none">
           <h2>2) 稼働時間（<span style="color:var(--accent-strong)">年収ベース</span>）</h2>
           <div class="row"><div class="label">年間の稼働日数</div><input id="yDays" type="number" min="1" max="366" step="1" value="240" /></div>
+          <div class="help err" id="err_yDays"></div>
           <div class="row"><div class="label">1日の労働時間</div><input id="yHoursPerDay" type="number" min="0.1" max="24" step="0.25" value="8" /></div>
+          <div class="help err" id="err_yHoursPerDay"></div>
           <div class="row"><div class="label">年間の稼働時間</div><input id="yHours" type="number" min="1" step="1" value="1920" /></div>
           <div class="help">※ 上の2項目を変更すると自動で再計算（手入力も可）。</div>
         </div>
@@ -182,7 +189,7 @@
       </div>
     </div>
 
-    <div class="credit"><span id="creditText"></span></div>
+    <div class="credit"><span id="creditText">Copyright (c) 2025 税理士法人松本会計事務所 All Rights Reserved. / r11</span></div>
   </div>
 
 <script>
@@ -192,13 +199,18 @@
   function init(){
     if(booted) return; booted=true;
     try{
-      const VERSION = 'r10';
+      const VERSION = 'r11';
       const SOC_RATE = 16.0; // 事業主負担の標準率（概算）
       const el = (id)=>document.getElementById(id);
       const on = (id,ev,fn)=>{ const e=el(id); if(e) e.addEventListener(ev,fn); };
       const fmtJPY = (n)=> new Intl.NumberFormat('ja-JP',{style:'currency', currency:'JPY', maximumFractionDigits:0}).format(n);
 
       const state = { mode:'monthly', salary:300000, overheadSoc:false, mDays:20, mHoursPerDay:8, mHours:160, yDays:240, yHoursPerDay:8, yHours:1920, useHours:1 };
+
+      // エラーメッセージ制御
+      const errTimers={};
+      function showErr(id,msg){ const e=el(id); if(!e) return; e.textContent=msg; e.style.display='block'; clearTimeout(errTimers[id]); errTimers[id]=setTimeout(()=>{ e.style.display='none'; }, 2400); }
+      function hideErr(id){ const e=el(id); if(!e) return; e.style.display='none'; clearTimeout(errTimers[id]); }
 
       function showToast(msg){ const t=document.createElement('div'); t.className='toast'; t.textContent=msg; document.body.appendChild(t); setTimeout(()=>{ t.remove(); }, 1600); }
       function clamp(v,min,max){ v=Number(v)||0; if(v<min) v=min; if(v>max) v=max; return v; }
@@ -274,6 +286,7 @@
       function resetAll(){
         Object.assign(state,{mode:'monthly', salary:300000, overheadSoc:false, mDays:20, mHoursPerDay:8, mHours:160, yDays:240, yHoursPerDay:8, yHours:1920, useHours:1});
         formatMoneyToInput(state.salary); const ov=el('overheadSoc'); if(ov) ov.checked=false; const md=el('mDays'); if(md) md.value='20'; const mhpd=el('mHoursPerDay'); if(mhpd) mhpd.value='8'; const mh=el('mHours'); if(mh) mh.value='160'; const yd=el('yDays'); if(yd) yd.value='240'; const yhpd=el('yHoursPerDay'); if(yhpd) yhpd.value='8'; const yh=el('yHours'); if(yh) yh.value='1920'; const uh=el('useHours'); if(uh) uh.value='1.0'; syncUseHoursRange(); updateView(); save(); showToast('リセットしました');
+        hideErr('err_mDays'); hideErr('err_mHoursPerDay'); hideErr('err_yDays'); hideErr('err_yHoursPerDay');
       }
 
       // events（存在チェックつきで登録）
@@ -287,13 +300,13 @@
       on('overheadSoc','change', (e)=>{ state.overheadSoc=!!e.target.checked; updateView(); save(); });
 
       const recalcMonthly=()=>{ state.mDays=clamp(state.mDays,1,31); state.mHoursPerDay=clamp(state.mHoursPerDay,0.1,24); state.mHours=(Number(state.mDays)||0)*(Number(state.mHoursPerDay)||0); const mh=el('mHours'); if(mh) mh.value=state.mHours; };
-      on('mDays','input',(e)=>{ state.mDays=clamp(e.target.value,1,31); e.target.value=state.mDays; recalcMonthly(); updateView(); save(); });
-      on('mHoursPerDay','input',(e)=>{ state.mHoursPerDay=clamp(e.target.value,0.1,24); e.target.value=state.mHoursPerDay; recalcMonthly(); updateView(); save(); });
+      on('mDays','input',(e)=>{ const raw=Number(e.target.value)||0; state.mDays=clamp(raw,1,31); e.target.value=state.mDays; if(raw>31){ showErr('err_mDays','月の稼働日数の上限は31日です（入力値を補正しました）'); } else { hideErr('err_mDays'); } recalcMonthly(); updateView(); save(); });
+      on('mHoursPerDay','input',(e)=>{ const raw=Number(e.target.value)||0; state.mHoursPerDay=clamp(raw,0.1,24); e.target.value=state.mHoursPerDay; if(raw>24){ showErr('err_mHoursPerDay','1日の労働時間の上限は24時間です（入力値を補正しました）'); } else { hideErr('err_mHoursPerDay'); } recalcMonthly(); updateView(); save(); });
       on('mHours','input',(e)=>{ state.mHours=Number(e.target.value)||0; updateView(); save(); });
 
       const recalcYearly=()=>{ state.yDays=clamp(state.yDays,1,366); state.yHoursPerDay=clamp(state.yHoursPerDay,0.1,24); state.yHours=(Number(state.yDays)||0)*(Number(state.yHoursPerDay)||0); const yh=el('yHours'); if(yh) yh.value=state.yHours; };
-      on('yDays','input',(e)=>{ state.yDays=clamp(e.target.value,1,366); e.target.value=state.yDays; recalcYearly(); updateView(); save(); });
-      on('yHoursPerDay','input',(e)=>{ state.yHoursPerDay=clamp(e.target.value,0.1,24); e.target.value=state.yHoursPerDay; recalcYearly(); updateView(); save(); });
+      on('yDays','input',(e)=>{ const raw=Number(e.target.value)||0; state.yDays=clamp(raw,1,366); e.target.value=state.yDays; if(raw>366){ showErr('err_yDays','年間の稼働日数の上限は366日です（入力値を補正しました）'); } else { hideErr('err_yDays'); } recalcYearly(); updateView(); save(); });
+      on('yHoursPerDay','input',(e)=>{ const raw=Number(e.target.value)||0; state.yHoursPerDay=clamp(raw,0.1,24); e.target.value=state.yHoursPerDay; if(raw>24){ showErr('err_yHoursPerDay','1日の労働時間の上限は24時間です（入力値を補正しました）'); } else { hideErr('err_yHoursPerDay'); } recalcYearly(); updateView(); save(); });
       on('yHours','input',(e)=>{ state.yHours=Number(e.target.value)||0; updateView(); save(); });
 
       on('useHours','input', (e)=>{ state.useHours=Number(e.target.value)||0; const r=el('useHoursRange'); if(r) r.value=String(state.useHours); updateView(); save(); });
@@ -303,9 +316,9 @@
       on('resetBtn','click', resetAll);
 
       // persist
-      const KEY='rate_tool_r10';
+      const KEY='rate_tool_r11';
       function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
-      function load(){ try{ const s = JSON.parse(localStorage.getItem(KEY)||localStorage.getItem('rate_tool_r9')||'null'); if(s){ Object.assign(state,s); } }catch(e){} }
+      function load(){ try{ const s = JSON.parse(localStorage.getItem(KEY)||localStorage.getItem('rate_tool_r10')||'null'); if(s){ Object.assign(state,s); } }catch(e){} }
 
       // init
       load();

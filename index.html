@@ -47,7 +47,7 @@
     .result{ display:grid; grid-template-columns:1fr; gap:8px; padding:10px; }
     .tile{border:1px solid var(--line); border-radius:9px; padding:8px; background:linear-gradient(180deg,#ffffff 0%, #f7fbfe 100%);}    
     .tile h3{margin:0 0 3px 0; font-size:12.5px; color:var(--muted);}    
-    .main-figure{font-size:24px; font-weight:700; letter-spacing:.2px;}
+    .main-figure{font-size:24px; font-weight:600; letter-spacing:.2px;}
     #hourly{ color:var(--accent-strong); }
     #cost{ color:var(--good); }
 
@@ -108,7 +108,7 @@
           <h2>2) 稼働時間（<span style="color:var(--accent-strong)">月給ベース</span>）</h2>
           <div class="row"><div class="label">月の稼働日数</div><input id="mDays" type="number" inputmode="numeric" min="1" max="31" step="1" value="20" /></div>
           <div class="help err" id="err_mDays"></div>
-          <div class="row"><div class="label">1日の労働時間</div><input id="mHoursPerDay" type="number" inputmode="decimal" min="0.1" max="24" step="0.25" value="8" /></div>
+          <div class="row"><div class="label">1日の労働時間</div><input id="mHoursPerDay" type="text" inputmode="decimal" placeholder="例：7.5" value="8" /></div>
           <div class="help err" id="err_mHoursPerDay"></div>
           <div class="row"><div class="label">月の稼働時間</div><input id="mHours" type="number" min="1" step="1" value="160" /></div>
           <div class="help">※ 上の2項目を変更すると自動で再計算（手入力も可）。</div>
@@ -118,7 +118,7 @@
           <h2>2) 稼働時間（<span style="color:var(--accent-strong)">年収ベース</span>）</h2>
           <div class="row"><div class="label">年間の稼働日数</div><input id="yDays" type="number" inputmode="numeric" min="1" max="366" step="1" value="240" /></div>
           <div class="help err" id="err_yDays"></div>
-          <div class="row"><div class="label">1日の労働時間</div><input id="yHoursPerDay" type="number" inputmode="decimal" min="0.1" max="24" step="0.25" value="8" /></div>
+          <div class="row"><div class="label">1日の労働時間</div><input id="yHoursPerDay" type="text" inputmode="decimal" placeholder="例：7.5" value="8" /></div>
           <div class="help err" id="err_yHoursPerDay"></div>
           <div class="row"><div class="label">年間の稼働時間</div><input id="yHours" type="number" min="1" step="1" value="1920" /></div>
           <div class="help">※ 上の2項目を変更すると自動で再計算（手入力も可）。</div>
@@ -191,7 +191,7 @@
       </div>
     </div>
 
-    <div class="credit"><span id="creditText">Copyright (c) 2025 税理士法人松本会計事務所 All Rights Reserved. / r14</span></div>
+    <div class="credit"><span id="creditText">Copyright (c) 2025 税理士法人松本会計事務所 All Rights Reserved. / r15</span></div>
   </div>
 
 <script>
@@ -201,7 +201,7 @@
   function init(){
     if(booted) return; booted=true;
     try{
-      const VERSION = 'r14';
+      const VERSION = 'r15';
       const SOC_RATE = 16.0; // 事業主負担の標準率（概算）
       const el = (id)=>document.getElementById(id);
       const on = (id,ev,fn)=>{ const e=el(id); if(e) e.addEventListener(ev,fn); };
@@ -209,7 +209,7 @@
 
       const state = { mode:'monthly', salary:300000, overheadSoc:false, mDays:20, mHoursPerDay:8, mHours:160, yDays:240, yHoursPerDay:8, yHours:1920, useHours:1 };
 
-      // 自己診断 & エラーハンドラ（任意で利用可）
+      // 自己診断 & エラーハンドラ
       window.__diag = ()=>({ VERSION, state, found:{
         btnHourly:!!el('btnHourly'), btnMonthly:!!el('btnMonthly'), btnYearly:!!el('btnYearly'),
         salary:!!el('salary'), salaryRange:!!el('salaryRange'),
@@ -225,7 +225,7 @@
       function showErr(id,msg){ const e=el(id); if(!e) return; e.textContent=msg; e.style.display='block'; clearTimeout(errTimers[id]); errTimers[id]=setTimeout(()=>{ e.style.display='none'; }, 2600); }
       function hideErr(id){ const e=el(id); if(!e) return; e.style.display='none'; clearTimeout(errTimers[id]); }
 
-      function showToast(msg){ const t=document.createElement('div'); t.className='toast'; t.textContent=msg; document.body.appendChild(t); setTimeout(()=>{ t.remove(); }, 1600); }
+      function showToast(msg){ const t=document.createElement('div'); t.className='toast'; t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(), 1600); }
       function clamp(v,min,max){ v=Number(v); if(!isFinite(v)) return v; if(v<min) return min; if(v>max) return max; return v; }
       function parseMoney(text){ const cleaned = String(text||'').replace(/[^0-9.]/g,''); return Number(cleaned||0); }
       function formatMoneyToInput(num){ const s=el('salary'); if(s) s.value = (Number(num)||0).toLocaleString('ja-JP'); }
@@ -239,8 +239,8 @@
 
       // ---- 再計算（soft/hard） ----
       function recalcMonthly(soft=true){
-        let d = Number(state.mDays); let hpd = Number(state.mHoursPerDay);
-        if(!isFinite(d) || !isFinite(hpd)) return; // 未入力中は計算しない
+        let d = Number(state.mDays); let hpd = parseFloat(state.mHoursPerDay);
+        if(!isFinite(d) || isNaN(hpd)) return; // 入力中は未確定
         if(!soft){
           const d0=d, h0=hpd; d = clamp(d,1,31); hpd = clamp(hpd,0.1,24);
           if(d!==d0){ state.mDays=d; const md=el('mDays'); if(md) md.value=String(d); }
@@ -249,8 +249,8 @@
         state.mHours = d*hpd; const mh=el('mHours'); if(mh) mh.value = String(state.mHours);
       }
       function recalcYearly(soft=true){
-        let d = Number(state.yDays); let hpd = Number(state.yHoursPerDay);
-        if(!isFinite(d) || !isFinite(hpd)) return;
+        let d = Number(state.yDays); let hpd = parseFloat(state.yHoursPerDay);
+        if(!isFinite(d) || isNaN(hpd)) return;
         if(!soft){
           const d0=d, h0=hpd; d = clamp(d,1,366); hpd = clamp(hpd,0.1,24);
           if(d!==d0){ state.yDays=d; const yd=el('yDays'); if(yd) yd.value=String(d); }
@@ -330,7 +330,7 @@
         hideErr('err_mDays'); hideErr('err_mHoursPerDay'); hideErr('err_yDays'); hideErr('err_yHoursPerDay');
       }
 
-      // ---- events（入力中はclampしない／確定時にclamp） ----
+      // ---- events ----
       on('btnMonthly','click', ()=>{ state.mode='monthly'; updateView(); save(); });
       on('btnYearly','click',  ()=>{ state.mode='yearly';  updateView(); save(); });
       on('btnHourly','click',  ()=>{ state.mode='hourly';  updateView(); save(); });
@@ -343,15 +343,15 @@
       // 月
       on('mDays','input',(e)=>{ const v=e.target.value; const n=Number(v); if(isFinite(n)) { state.mDays=n; recalcMonthly(true); updateView(); save(); } });
       on('mDays','blur', (e)=>{ let n=Number(e.target.value); if(!isFinite(n)) n=20; const raw=n; n=clamp(n,1,31); if(raw>31){ showErr('err_mDays','月の稼働日数の上限は31日です（入力値を補正しました）'); } else { hideErr('err_mDays'); } state.mDays=n; e.target.value=String(n); recalcMonthly(false); updateView(); save(); });
-      on('mHoursPerDay','input',(e)=>{ const v=e.target.value; const n=parseFloat(v); if(!isNaN(n)) { state.mHoursPerDay=n; recalcMonthly(true); updateView(); save(); } });
-      on('mHoursPerDay','blur', (e)=>{ let n=parseFloat(e.target.value); if(isNaN(n)) n=8; const raw=n; n=clamp(n,0.1,24); if(raw>24){ showErr('err_mHoursPerDay','1日の労働時間の上限は24時間です（入力値を補正しました）'); } else { hideErr('err_mHoursPerDay'); } state.mHoursPerDay=n; e.target.value=String(n); recalcMonthly(false); updateView(); save(); });
+      on('mHoursPerDay','input',(e)=>{ const v=e.target.value; if(v===''){ return; } const n=parseFloat(v); if(!isNaN(n)) { state.mHoursPerDay=n; recalcMonthly(true); updateView(); save(); } });
+      on('mHoursPerDay','blur', (e)=>{ let v=e.target.value.trim(); let n=parseFloat(v); if(isNaN(n)) n=8; const raw=n; n=clamp(n,0.1,24); if(raw>24){ showErr('err_mHoursPerDay','1日の労働時間の上限は24時間です（入力値を補正しました）'); } else { hideErr('err_mHoursPerDay'); } state.mHoursPerDay=n; e.target.value=String(n); recalcMonthly(false); updateView(); save(); });
       on('mHours','input',(e)=>{ const n=Number(e.target.value); if(isFinite(n)) { state.mHours=n; updateView(); save(); } });
 
       // 年
       on('yDays','input',(e)=>{ const v=e.target.value; const n=Number(v); if(isFinite(n)) { state.yDays=n; recalcYearly(true); updateView(); save(); } });
       on('yDays','blur', (e)=>{ let n=Number(e.target.value); if(!isFinite(n)) n=240; const raw=n; n=clamp(n,1,366); if(raw>366){ showErr('err_yDays','年間の稼働日数の上限は366日です（入力値を補正しました）'); } else { hideErr('err_yDays'); } state.yDays=n; e.target.value=String(n); recalcYearly(false); updateView(); save(); });
-      on('yHoursPerDay','input',(e)=>{ const v=e.target.value; const n=parseFloat(v); if(!isNaN(n)) { state.yHoursPerDay=n; recalcYearly(true); updateView(); save(); } });
-      on('yHoursPerDay','blur', (e)=>{ let n=parseFloat(e.target.value); if(isNaN(n)) n=8; const raw=n; n=clamp(n,0.1,24); if(raw>24){ showErr('err_yHoursPerDay','1日の労働時間の上限は24時間です（入力値を補正しました）'); } else { hideErr('err_yHoursPerDay'); } state.yHoursPerDay=n; e.target.value=String(n); recalcYearly(false); updateView(); save(); });
+      on('yHoursPerDay','input',(e)=>{ const v=e.target.value; if(v===''){ return; } const n=parseFloat(v); if(!isNaN(n)) { state.yHoursPerDay=n; recalcYearly(true); updateView(); save(); } });
+      on('yHoursPerDay','blur', (e)=>{ let v=e.target.value.trim(); let n=parseFloat(v); if(isNaN(n)) n=8; const raw=n; n=clamp(n,0.1,24); if(raw>24){ showErr('err_yHoursPerDay','1日の労働時間の上限は24時間です（入力値を補正しました）'); } else { hideErr('err_yHoursPerDay'); } state.yHoursPerDay=n; e.target.value=String(n); recalcYearly(false); updateView(); save(); });
       on('yHours','input',(e)=>{ const n=Number(e.target.value); if(isFinite(n)) { state.yHours=n; updateView(); save(); } });
 
       // 所要時間
@@ -362,9 +362,9 @@
       on('resetBtn','click', resetAll);
 
       // persist
-      const KEY='rate_tool_r14';
+      const KEY='rate_tool_r15';
       function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
-      function load(){ try{ const s = JSON.parse(localStorage.getItem(KEY)||localStorage.getItem('rate_tool_r13')||'null'); if(s){ Object.assign(state,s); } }catch(e){} }
+      function load(){ try{ const s = JSON.parse(localStorage.getItem(KEY)||localStorage.getItem('rate_tool_r14')||'null'); if(s){ Object.assign(state,s); } }catch(e){} }
 
       // init
       load();
@@ -392,7 +392,7 @@
       console.error(err);
       const div = document.createElement('div');
       div.className='toast';
-      div.style.background='#fff3cd'; div.style.color='#856404'; div.style.border='1px solid #ffeeba';
+      div.style.background='#fff3cd'; div.style.color:'#856404'; div.style.border='1px solid #ffeeba';
       div.textContent='初期化エラー。ブラウザのConsoleを確認してください。';
       document.body.appendChild(div); setTimeout(()=>div.remove(), 4000);
     }

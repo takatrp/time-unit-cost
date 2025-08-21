@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>時間単価・コスト可視化ツール</title>
   <style>
-    :root{ --bg:#f5f8fb; --card:#ffffff; --ink:#1f2937; --muted:#6b7280; --accent:#3aa2c8; --accent-strong:#2384a8; --line:#e7eef3; --good:#10b981; }
+    :root{ --bg:#f5f8fb; --card:#ffffff; --ink:#1f2937; --muted:#6b7280; --accent:#3aa2c8; --accent-strong:#2384a8; --line:#e7eef3; }
     *{box-sizing:border-box}
     html,body{height:100%}
     body{ margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic","Meiryo",Arial,sans-serif; color:var(--ink); background:var(--bg);}   
@@ -32,10 +32,12 @@
     input[type="text"], input[type="number"], select{ width:100%; padding:7px 9px; font-size:13.5px; border-radius:9px; border:1px solid var(--line); background:#f9fbfd; outline:none; transition:border .15s, box-shadow .15s, background .15s; }
     input[type="text"]:focus, input[type="number"]:focus, select:focus{ border-color:var(--accent); box-shadow:0 0 0 3px rgba(58,162,200,.18); background:#fff; }
 
+    /* スライダー */
     .slider-row{display:grid; grid-template-columns:1fr; gap:3px;}
     input[type="range"]{ width:100%; height:26px; -webkit-appearance:none; appearance:none; background:transparent; }
     input[type="range"]::-webkit-slider-runnable-track{ height:6px; background:linear-gradient(90deg,var(--accent) 0%, var(--accent-strong) 100%); border-radius:999px; opacity:.35; }
     input[type="range"]::-moz-range-track{ height:6px; background:linear-gradient(90deg,var(--accent) 0%, var(--accent-strong) 100%); border-radius:999px; opacity:.35; }
+    /* つまみ：白抜き＋青の縁取り */
     input[type="range"]::-webkit-slider-thumb{ -webkit-appearance:none; appearance:none; width:18px; height:18px; border-radius:50%; background:#fff; border:3px solid var(--accent-strong); margin-top:-6px; box-shadow:0 2px 6px rgba(0,0,0,.15); }
     input[type="range"]::-moz-range-thumb{ width:18px; height:18px; border-radius:50%; background:#fff; border:3px solid var(--accent-strong); box-shadow:0 2px 6px rgba(0,0,0,.15); }
 
@@ -48,10 +50,12 @@
     .tile h3{margin:0 0 3px 0; font-size:12.5px; color:var(--muted);}    
     .main-figure{font-size:24px; font-weight:600; letter-spacing:.2px; color:var(--accent-strong);} 
 
+    .figure-row{ display:flex; align-items:baseline; justify-content:space-between; gap:8px; }
+
     .btn{display:inline-flex; gap:6px; align-items:center; padding:7px 10px; background:linear-gradient(180deg,var(--accent),var(--accent-strong)); border:none; color:#fff; border-radius:9px; cursor:pointer; font-weight:700;}
     .btn.secondary{background:#eef5f9; color:var(--accent-strong); border:1px solid var(--line);} 
 
-    .footer{font-size:11px; color:var(--muted); padding:6px 10px 10px;}
+    .footer{font-size:11px; color:#6b7280; padding:6px 10px 10px;}
     .grid-2{display:grid; grid-template-columns:1fr 1fr; gap:6px;}
     .hr{height:1px; background:var(--line); margin:6px 0;}
 
@@ -70,6 +74,7 @@
     </header>
 
     <div class="grid">
+      <!-- 入力 -->
       <div class="card">
         <div class="section">
           <h2>1) 入力</h2>
@@ -129,6 +134,7 @@
         </div>
       </div>
 
+      <!-- 結果 -->
       <div class="card">
         <div class="section">
           <h2>結果</h2>
@@ -142,7 +148,10 @@
 
             <div class="tile">
               <h3>所要時間のコスト</h3>
-              <div class="main-figure" id="cost">–</div>
+              <div class="figure-row">
+                <div class="main-figure" id="cost">–</div>
+                <div class="help" id="costTimes12">（×12＝—）</div>
+              </div>
               <div class="help">15分：<b id="c15">–</b> ／ 30分：<b id="c30">–</b> ／ 1時間：<b id="c60">–</b></div>
             </div>
 
@@ -178,22 +187,22 @@
           </div>
         </div>
         <div class="footer">
-          <div class="note">※ このツールは、<b>単純な換算法</b>（時間単価＝給与÷稼働時間）に基づきます。労基法上の一般的な所定労働時間（1日8時間・週40時間）に合わせ、初期値を 8h×20日/月・8h×240日/年としてあります。また、社保上乗せは標準率を使用しており、実際の料率は保険者・業種・地域・年度等により異なります。</div>
+          <div class="note">※ このツールは、単純な換算法（時間単価＝給与÷稼働時間）に基づきます。労基法上の一般的な所定労働時間（1日8時間・週40時間）に合わせ、初期値を 8h×20日/月・8h×240日/年としてあります。また、社保上乗せは標準率を使用しており、実際の料率は保険者・業種・地域・年度等により異なります。</div>
         </div>
       </div>
     </div>
 
-    <div class="credit"><span id="creditText">Copyright (c) 2025 税理士法人松本会計事務所 All Rights Reserved. / r19</span></div>
+    <div class="credit"><span id="creditText">Copyright (c) 2025 税理士法人松本会計事務所 All Rights Reserved. / r17</span></div>
   </div>
 
 <script>
 (function(){
   'use strict';
-  var VERSION='r19';
+  var VERSION='r17';
   var SOC_RATE=16.0;
   function el(id){ return document.getElementById(id); }
   function on(id,ev,fn){ var e=el(id); if(e){ e.addEventListener(ev,fn,false); } }
-  function fmtJPY(n){ try{ return new Intl.NumberFormat('ja-JP',{style:'currency',currency:'JPY',maximumFractionDigits:0}).format(n); }catch(_){ return '¥'+String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g,','); } }
+  function fmtJPY(n){ try{ return new Intl.NumberFormat('ja-JP',{style:'currency',currency:'JPY',maximumFractionDigits:0}).format(n); }catch(_){ return '¥'+String(Math.round(n)); } }
   function parseMoney(text){ var cleaned=String(text||'').replace(/[^0-9.]/g,''); return Number(cleaned||0); }
   function clamp(v,min,max){ v=Number(v); if(!isFinite(v)) return v; if(v<min) return min; if(v>max) return max; return v; }
 
@@ -206,13 +215,7 @@
   function hourlyRate(){ var denom = state.mode==='monthly'? monthlyHours(): state.mode==='yearly'? yearlyHours(): 1; var rate = denom>0? loadedSalary()/denom:0; return Math.round(rate); }
   function costFor(h){ return Math.round(hourlyRate()*(Number(h)||0)); }
 
-  function setSegment(){
-    var bm=el('btnMonthly'), by=el('btnYearly'), bh=el('btnHourly');
-    if(bm) bm.classList.toggle('active', state.mode==='monthly');
-    if(by) by.classList.toggle('active', state.mode==='yearly');
-    if(bh) bh.classList.toggle('active', state.mode==='hourly');
-    var sl=el('salaryLabel'); if(sl) sl.textContent = state.mode==='monthly'? '月給（税引前）' : (state.mode==='yearly'? '年収（税引前）' : '時給（税引前）');
-  }
+  function setSegment(){ var bm=el('btnMonthly'), by=el('btnYearly'), bh=el('btnHourly'); if(bm) bm.classList.toggle('active', state.mode==='monthly'); if(by) by.classList.toggle('active', state.mode==='yearly'); if(bh) bh.classList.toggle('active', state.mode==='hourly'); var sl=el('salaryLabel'); if(sl) sl.textContent = state.mode==='monthly'? '月給（税引前）' : (state.mode==='yearly'? '年収（税引前）' : '時給（税引前）'); }
   function syncSalaryRange(){ var r=el('salaryRange'); if(!r) return; if(state.mode==='monthly'){ r.min=100000; r.max=2000000; r.step=1000; } else if(state.mode==='yearly'){ r.min=1000000; r.max=30000000; r.step=10000; } else { r.min=800; r.max=10000; r.step=10; } r.value=String(baseSalary()); }
   function syncUseHoursRange(){ var r=el('useHoursRange'); if(r){ r.min=0; r.max=12; r.step=0.25; r.value=String(state.useHours||0);} }
   function updateVisibility(){ var mb=el('monthlyBlock'), yb=el('yearlyBlock'); if(state.mode==='monthly'){ if(mb) mb.style.display=''; if(yb) yb.style.display='none'; } else if(state.mode==='yearly'){ if(mb) mb.style.display='none'; if(yb) yb.style.display=''; } else { if(mb) mb.style.display='none'; if(yb) yb.style.display='none'; } }
@@ -234,7 +237,9 @@
     var pm=el('perMin'); if(pm) pm.textContent = fmtJPY(Math.round(h/60));
 
     var useH=Number(state.useHours)||0;
-    var cst=el('cost'); if(cst) cst.textContent = fmtJPY(costFor(useH));
+    var cVal=costFor(useH);
+    var cst=el('cost'); if(cst) cst.textContent = fmtJPY(cVal);
+    var ct12=el('costTimes12'); if(ct12) ct12.textContent = '（×12＝'+fmtJPY(cVal*12)+'）';
     var c15=el('c15'); if(c15) c15.textContent = fmtJPY(costFor(0.25));
     var c30=el('c30'); if(c30) c30.textContent = fmtJPY(costFor(0.5));
     var c60=el('c60'); if(c60) c60.textContent = fmtJPY(costFor(1));
@@ -251,17 +256,15 @@
   function copySummary(){
     var base = state.mode==='monthly'? '月給' : (state.mode==='yearly'? '年収' : '時給');
     var workLine = state.mode==='monthly'? ('稼働時間：'+state.mHours.toLocaleString('ja-JP')+' 時間/月') : (state.mode==='yearly'? ('稼働時間：'+state.yHours.toLocaleString('ja-JP')+' 時間/年') : '稼働時間：—（時給ベース）');
-    var txt = [
-      '【時間単価・コスト可視化】',
-      '給与ベース：'+base,
-      '対象給与：'+fmtJPY(baseSalary()),
-      '社保上乗せ：'+(state.overheadSoc?('あり（'+SOC_RATE+'%）'):'なし'),
-      workLine,
-      '時間単価：'+fmtJPY(hourlyRate())+' /h',
-      '1分あたり：'+fmtJPY(Math.round(hourlyRate()/60)),
-      '15分：'+fmtJPY(costFor(0.25))+' ／ 30分：'+fmtJPY(costFor(0.5))+' ／ 1時間：'+fmtJPY(costFor(1)),
-      '(ver '+VERSION+')'
-    ].join('\n');
+    var txt = `【時間単価・コスト可視化】
+給与ベース：${base}
+対象給与：${fmtJPY(baseSalary())}
+社保上乗せ：${state.overheadSoc?('あり（'+SOC_RATE+'%）'):'なし'}
+${workLine}
+時間単価：${fmtJPY(hourlyRate())} /h
+1分あたり：${fmtJPY(Math.round(hourlyRate()/60))}
+15分：${fmtJPY(costFor(0.25))} ／ 30分：${fmtJPY(costFor(0.5))} ／ 1時間：${fmtJPY(costFor(1))}
+(ver ${VERSION})`;
 
     if(navigator.clipboard && navigator.clipboard.writeText){
       navigator.clipboard.writeText(txt).then(function(){ showToast('コピーしました'); }).catch(function(){
@@ -291,7 +294,6 @@
     for(var i=0;i<ids.length;i++){ var e=el(ids[i]); if(e) e.style.display='none'; }
   }
 
-  // events
   on('btnMonthly','click', function(){ state.mode='monthly'; updateView(); save(); });
   on('btnYearly','click', function(){ state.mode='yearly'; updateView(); save(); });
   on('btnHourly','click', function(){ state.mode='hourly'; updateView(); save(); });
@@ -300,30 +302,29 @@
   on('salary','blur', function(){ formatMoneyToInput(baseSalary()); });
   on('salaryRange','input', function(e){ state.salary=Number(e.target.value)||0; formatMoneyToInput(baseSalary()); updateView(); save(); });
   on('salaryRange','change', function(e){ state.salary=Number(e.target.value)||0; formatMoneyToInput(baseSalary()); updateView(); save(); });
-
   on('overheadSoc','change', function(e){ state.overheadSoc=!!e.target.checked; updateView(); save(); });
 
-  on('mDays','input', function(e){ var n=Number(e.target.value); if(isFinite(n)){ state.mDays=n; recalcMonthly(true); updateView(); save(); } });
+  on('mDays','input', function(e){ var n=Number(e.target.value); if(isFinite(n)) { state.mDays=n; recalcMonthly(true); updateView(); save(); } });
   on('mDays','blur', function(e){ var n=Number(e.target.value); if(!isFinite(n)) n=20; var raw=n; n=clamp(n,1,31); if(raw>31){ var m=document.getElementById('err_mDays'); if(m){ m.textContent='月の稼働日数の上限は31日です（入力値を補正しました）'; m.style.display='block'; setTimeout(function(){ m.style.display='none'; }, 2600);} } state.mDays=n; e.target.value=String(n); recalcMonthly(false); updateView(); save(); });
-  on('mHoursPerDay','input', function(e){ var v=e.target.value; if(v==='') return; var n=parseFloat(v); if(!isNaN(n)){ state.mHoursPerDay=n; recalcMonthly(true); updateView(); save(); } });
+  on('mHoursPerDay','input', function(e){ var v=e.target.value; if(v==='') return; var n=parseFloat(v); if(!isNaN(n)) { state.mHoursPerDay=n; recalcMonthly(true); updateView(); save(); } });
   on('mHoursPerDay','blur', function(e){ var v=e.target.value.trim(); var n=parseFloat(v); if(isNaN(n)) n=8; var raw=n; n=clamp(n,0.1,24); if(raw>24){ var m=document.getElementById('err_mHoursPerDay'); if(m){ m.textContent='1日の労働時間の上限は24時間です（入力値を補正しました）'; m.style.display='block'; setTimeout(function(){ m.style.display='none'; }, 2600);} } state.mHoursPerDay=n; e.target.value=String(n); recalcMonthly(false); updateView(); save(); });
-  on('mHours','input', function(e){ var n=Number(e.target.value); if(isFinite(n)){ state.mHours=n; updateView(); save(); } });
+  on('mHours','input', function(e){ var n=Number(e.target.value); if(isFinite(n)) { state.mHours=n; updateView(); save(); } });
 
-  on('yDays','input', function(e){ var n=Number(e.target.value); if(isFinite(n)){ state.yDays=n; recalcYearly(true); updateView(); save(); } });
+  on('yDays','input', function(e){ var n=Number(e.target.value); if(isFinite(n)) { state.yDays=n; recalcYearly(true); updateView(); save(); } });
   on('yDays','blur', function(e){ var n=Number(e.target.value); if(!isFinite(n)) n=240; var raw=n; n=clamp(n,1,366); if(raw>366){ var m=document.getElementById('err_yDays'); if(m){ m.textContent='年間の稼働日数の上限は366日です（入力値を補正しました）'; m.style.display='block'; setTimeout(function(){ m.style.display='none'; }, 2600);} } state.yDays=n; e.target.value=String(n); recalcYearly(false); updateView(); save(); });
-  on('yHoursPerDay','input', function(e){ var v=e.target.value; if(v==='') return; var n=parseFloat(v); if(!isNaN(n)){ state.yHoursPerDay=n; recalcYearly(true); updateView(); save(); } });
+  on('yHoursPerDay','input', function(e){ var v=e.target.value; if(v==='') return; var n=parseFloat(v); if(!isNaN(n)) { state.yHoursPerDay=n; recalcYearly(true); updateView(); save(); } });
   on('yHoursPerDay','blur', function(e){ var v=e.target.value.trim(); var n=parseFloat(v); if(isNaN(n)) n=8; var raw=n; n=clamp(n,0.1,24); if(raw>24){ var m=document.getElementById('err_yHoursPerDay'); if(m){ m.textContent='1日の労働時間の上限は24時間です（入力値を補正しました）'; m.style.display='block'; setTimeout(function(){ m.style.display='none'; }, 2600);} } state.yHoursPerDay=n; e.target.value=String(n); recalcYearly(false); updateView(); save(); });
-  on('yHours','input', function(e){ var n=Number(e.target.value); if(isFinite(n)){ state.yHours=n; updateView(); save(); } });
+  on('yHours','input', function(e){ var n=Number(e.target.value); if(isFinite(n)) { state.yHours=n; updateView(); save(); } });
 
-  on('useHours','input', function(e){ var n=parseFloat(e.target.value); if(!isNaN(n)){ state.useHours=n; var r=el('useHoursRange'); if(r) r.value=String(state.useHours); updateView(); save(); } });
+  on('useHours','input', function(e){ var n=parseFloat(e.target.value); if(!isNaN(n)) { state.useHours=n; var r=el('useHoursRange'); if(r) r.value=String(state.useHours); updateView(); save(); } });
   on('useHoursRange','input', function(e){ state.useHours=Number(e.target.value)||0; var u=el('useHours'); if(u) u.value=String(state.useHours); updateView(); save(); });
 
   on('copyBtn','click', copySummary);
   on('resetBtn','click', resetAll);
 
-  var KEY='rate_tool_r19';
+  var KEY='rate_tool_r17';
   function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
-  function load(){ try{ var s=JSON.parse(localStorage.getItem(KEY)||localStorage.getItem('rate_tool_r18')||localStorage.getItem('rate_tool_r17')||'null'); if(s){ state=s; } }catch(e){} }
+  function load(){ try{ var s=JSON.parse(localStorage.getItem(KEY)||'null'); if(s){ state=s; } }catch(e){} }
 
   function init(){
     load();
@@ -337,7 +338,7 @@
     updateView();
 
     var year=(new Date()).getFullYear();
-    var cr=el('creditText'); if(cr) cr.textContent='Copyright (c) '+year+' 税理士法人松本会計事務所 All Rights Reserved. / r19';
+    var cr=el('creditText'); if(cr) cr.textContent='Copyright (c) '+year+' 税理士法人松本会計事務所 All Rights Reserved. / '+VERSION;
   }
 
   if(document.readyState==='interactive' || document.readyState==='complete'){ init(); }

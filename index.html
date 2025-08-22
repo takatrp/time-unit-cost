@@ -2,367 +2,222 @@
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>時間単価・コスト可視化ツール</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>それ、売上に直すといくらですか？</title>
+  <meta name="theme-color" content="#2f7f86" />
   <style>
-    :root{ --bg:#f5f8fb; --card:#ffffff; --ink:#1f2937; --muted:#6b7280; --accent:#3aa2c8; --accent-strong:#2384a8; --line:#e7eef3; }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{ margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic","Meiryo",Arial,sans-serif; color:var(--ink); background:var(--bg);}   
-    .container{max-width:1100px; margin:10px auto; padding:0 10px;}
-    header{display:flex; gap:6px; align-items:center; margin-bottom:6px;}
-    .badge{background:linear-gradient(180deg,var(--accent),var(--accent-strong)); color:#fff; padding:3px 7px; border-radius:999px; font-size:10.5px;}
-    h1{font-size:17px; margin:0; font-weight:700; letter-spacing:.3px; line-height:1.05;}
-    @media (orientation:portrait){ h1{ font-size:14px; } }
-
-    .grid{display:grid; grid-template-columns:1fr; gap:10px;}
-    @media (min-width:900px){ .grid{grid-template-columns: 1.1fr 0.9fr;} }
-    @media (max-width:899px) and (orientation: landscape){ .grid{grid-template-columns:1fr 1fr;} }
-
-    .card{background:var(--card); border:1px solid var(--line); border-radius:10px; box-shadow:0 2px 10px rgba(0,0,0,.04);}    
-    .section{padding:10px 10px 4px 10px; border-bottom:1px solid var(--line);}   
-    .section:last-child{border-bottom:none; padding-bottom:10px;}
-    .section h2{margin:0 0 4px 0; font-size:14px;}
-
-    .help{font-size:11px; color:var(--muted);}    
-    .row{display:grid; grid-template-columns:130px 1fr; gap:8px; align-items:center; padding:4px 0;} 
-    .row + .row{border-top:1px dashed var(--line);}    
-    .label{color:var(--muted); font-size:12px;}
-
-    input[type="text"], input[type="number"], select{ width:100%; padding:7px 9px; font-size:13.5px; border-radius:9px; border:1px solid var(--line); background:#f9fbfd; outline:none; transition:border .15s, box-shadow .15s, background .15s; }
-    input[type="text"]:focus, input[type="number"]:focus, select:focus{ border-color:var(--accent); box-shadow:0 0 0 3px rgba(58,162,200,.18); background:#fff; }
-
-    /* スライダー */
-    .slider-row{display:grid; grid-template-columns:1fr; gap:3px;}
-    input[type="range"]{ width:100%; height:26px; -webkit-appearance:none; appearance:none; background:transparent; }
-    input[type="range"]::-webkit-slider-runnable-track{ height:6px; background:linear-gradient(90deg,var(--accent) 0%, var(--accent-strong) 100%); border-radius:999px; opacity:.35; }
-    input[type="range"]::-moz-range-track{ height:6px; background:linear-gradient(90deg,var(--accent) 0%, var(--accent-strong) 100%); border-radius:999px; opacity:.35; }
-    /* つまみ：白抜き＋青の縁取り */
-    input[type="range"]::-webkit-slider-thumb{ -webkit-appearance:none; appearance:none; width:18px; height:18px; border-radius:50%; background:#fff; border:3px solid var(--accent-strong); margin-top:-6px; box-shadow:0 2px 6px rgba(0,0,0,.15); }
-    input[type="range"]::-moz-range-thumb{ width:18px; height:18px; border-radius:50%; background:#fff; border:3px solid var(--accent-strong); box-shadow:0 2px 6px rgba(0,0,0,.15); }
-
-    .seg{display:flex; gap:6px;}
-    .seg button{flex:1; border:1px solid var(--line); background:#f3f7fb; color:#111; padding:6px 8px; border-radius:9px; cursor:pointer; font-weight:600; font-size:13.5px;}
-    .seg button.active{background:linear-gradient(180deg,var(--accent),var(--accent-strong)); color:#fff; border-color:transparent;}
-
-    .result{ display:grid; grid-template-columns:1fr; gap:8px; padding:10px; }
-    .tile{border:1px solid var(--line); border-radius:9px; padding:8px; background:linear-gradient(180deg,#ffffff 0%, #f7fbfe 100%);}    
-    .tile h3{margin:0 0 3px 0; font-size:12.5px; color:var(--muted);}    
-    .main-figure{font-size:24px; font-weight:600; letter-spacing:.2px; color:var(--accent-strong);} 
-
-    .figure-row{ display:flex; align-items:baseline; justify-content:space-between; gap:8px; }
-
-    /* 目立つ年間換算チップ */
-    .accent-chip{ font-size:13px; font-weight:700; color:var(--accent-strong); background:rgba(58,162,200,.12); border:1px solid rgba(35,132,168,.36); padding:3px 8px; border-radius:999px; white-space:nowrap; }
-
-    .btn{display:inline-flex; gap:6px; align-items:center; padding:7px 10px; background:linear-gradient(180deg,var(--accent),var(--accent-strong)); border:none; color:#fff; border-radius:9px; cursor:pointer; font-weight:700;}
-    .btn.secondary{background:#eef5f9; color:var(--accent-strong); border:1px solid var(--line);} 
-
-    .footer{font-size:11px; color:#6b7280; padding:6px 10px 10px;}
-    .grid-2{display:grid; grid-template-columns:1fr 1fr; gap:6px;}
-    .hr{height:1px; background:var(--line); margin:6px 0;}
-
-    .credit{ text-align:center; font-size:12px; color:#7b8794; padding:10px 0 12px; }
-    .switch{ display:flex; align-items:center; gap:8px; }
-
-    .err{ color:#b91c1c; font-size:11.5px; display:none; }
-    .toast{ position:fixed; left:8px; right:8px; bottom:8px; background:#111; color:#fff; padding:8px 10px; border-radius:8px; opacity:0.95; font-size:12px; z-index:9999; text-align:center; }
+    :root{
+      --bg:#f4f9fb; --card:#ffffff; --ink:#1e2a2d; --muted:#5a6a6d;
+      --accent:#2f7f86; --accent-2:#4ea4ad; --shadow:0 10px 30px rgba(35,80,90,.12);
+      --radius:16px;
+    }
+    html,body{height:100%;}
+    body{margin:0; font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN",
+      "Yu Gothic UI","YuGothic","Noto Sans JP","Segoe UI",Roboto,Arial,sans-serif;
+      background:var(--bg); color:var(--ink); -webkit-font-smoothing:antialiased;}
+    .wrap{padding:max(12px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right))
+           calc(16px + env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left));
+           max-width:560px; margin:0 auto;}
+    header{padding:14px 10px 2px;}
+    .title{font-weight:800; letter-spacing:.02em; line-height:1.25; font-size:clamp(20px,5.5vw,26px); margin:0 0 6px;}
+    .subtitle{color:var(--muted); font-size:12px;}
+    .card{background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); padding:18px 16px; margin:12px 0 18px;}
+    .field{margin:10px 0 16px;}
+    .label{font-size:15px; color:var(--muted); margin:0 0 6px 2px;}
+    .label.big{font-size:16px; font-weight:700; color:#324245;}
+    .helper{font-size:12px; color:#6a7a7d; margin:4px 2px 0;}
+    .ref-title{margin:10px 2px 0; font-size:12px; color:#607c80;}
+    .range-row{display:flex; align-items:center; gap:12px; padding:8px 0;}
+    input[type="range"]{-webkit-appearance:none; width:100%; height:26px; background:transparent;}
+    input[type="range"]::-webkit-slider-runnable-track{height:6px; background:linear-gradient(90deg,var(--accent-2),var(--accent)); border-radius:999px;}
+    input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none; width:26px; height:26px; border-radius:50%;
+      background:#fff; border:2px solid var(--accent); margin-top:-10px; box-shadow:0 1px 6px rgba(0,0,0,.08);}
+    .yen-input,.pctbox{display:flex; align-items:center; gap:8px; background:#f8fcfd; border:1px solid #d9eaed; border-radius:12px; padding:8px 10px;}
+    .yen-input .prefix{font-weight:700; color:var(--accent); border-right:1px solid #e6f1f3; padding-right:10px;}
+    input.money,input.pct{border:0; outline:none; background:transparent; font-size:20px; font-weight:800; color:var(--ink);
+      letter-spacing:.02em; width:120px; text-align:right; font-feature-settings:"tnum"; font-variant-numeric:tabular-nums;}
+    .pctbox .unit{font-weight:800; color:var(--ink);}
+    .chip-grid{display:grid; gap:8px; margin-top:8px; grid-template-columns:repeat(4, minmax(0,1fr));}
+    @media (max-width:380px){.chip-grid{grid-template-columns:repeat(3, minmax(0,1fr));}}
+    .chip{display:flex; align-items:center; justify-content:space-between; border:1px solid #d9eaed; background:#f3fafb; color:var(--accent);
+      padding:8px 10px; border-radius:12px; font-size:12px; line-height:1.05; cursor:pointer;}
+    .chip .nm{font-weight:700;} .chip .val{font-weight:900; color:#1f3a3e; font-feature-settings:"tnum";}
+    .btn{background:linear-gradient(180deg,var(--accent-2),var(--accent)); color:#fff; font-weight:900; letter-spacing:.02em;
+      border:0; width:100%; border-radius:12px; padding:16px 18px; font-size:17px; box-shadow:var(--shadow);}
+    .btn:active{transform:translateY(1px);} .btn.secondary{background:#eef7f8; color:var(--accent); box-shadow:none; border:1px solid #d9eaed;}
+    .result{text-align:center; margin-top:16px;}
+    .result .label{font-size:16px; font-weight:800; color:#324245;}
+    .amount{font-size:clamp(24px,7.5vw,36px); font-weight:900; color:var(--accent); margin:8px 0 6px; font-feature-settings:"tnum"; font-variant-numeric:tabular-nums;}
+    .statement{margin-top:12px; font-size:clamp(17px,5.2vw,21px); font-weight:900; line-height:1.5; color:#0f2022;
+      background:#e9f6f8; border:1px dashed var(--accent-2); padding:12px; border-radius:12px;}
+    .note{margin-top:10px; color:var(--muted); font-size:12px;}
+    footer{margin:18px 4px 6px; text-align:center; color:#667; font-size:11px;}
   </style>
 </head>
 <body>
-  <div class="container">
+  <div class="wrap">
     <header>
-      <span class="badge">人件費の見える化</span>
-      <h1>時間単価・コスト可視化ツール</h1>
+      <h1 class="title">それ、売上に直すといくらですか？</h1>
+      <div class="subtitle">支出や投資の金額を「御社の売上相当額」に換算して意思決定の質を高めましょう。</div>
     </header>
 
-    <div class="grid">
-      <!-- 入力 -->
-      <div class="card">
-        <div class="section">
-          <h2>1) 入力</h2>
-          <div class="row">
-            <div class="label">給与の単位</div>
-            <div class="seg" role="tablist" aria-label="給与の単位">
-              <button id="btnHourly" aria-selected="false">時給</button>
-              <button id="btnMonthly" class="active" aria-selected="true">月給</button>
-              <button id="btnYearly" aria-selected="false">年収</button>
-            </div>
-          </div>
-          <div class="row">
-            <div class="label"><span id="salaryLabel">月給（税引前）</span></div>
-            <div class="slider-row">
-              <input id="salary" type="text" inputmode="numeric" placeholder="例：300,000" value="300,000" />
-              <input id="salaryRange" type="range" min="100000" max="2000000" step="1000" />
-            </div>
-          </div>
-          <div class="row">
-            <div class="label">社保上乗せ</div>
-            <div class="switch">
-              <input id="overheadSoc" type="checkbox" />
-              <label for="overheadSoc" class="help">社会保険の<b>事業主負担</b>を上乗せ（標準率を適用）</label>
-            </div>
-          </div>
-        </div>
-
-        <div class="section" id="monthlyBlock">
-          <h2>2) 稼働時間（<span style="color:var(--accent-strong)">月給ベース</span>）</h2>
-          <div class="row"><div class="label">月の稼働日数</div><input id="mDays" type="number" inputmode="numeric" min="1" max="31" step="1" value="20" /></div>
-          <div class="help err" id="err_mDays"></div>
-          <div class="row"><div class="label">1日の労働時間</div><input id="mHoursPerDay" type="text" inputmode="decimal" placeholder="例：7.5" value="8" /></div>
-          <div class="help err" id="err_mHoursPerDay"></div>
-          <div class="row"><div class="label">月の稼働時間</div><input id="mHours" type="number" min="1" step="1" value="160" /></div>
-          <div class="help">※ 上の2項目を変更すると自動で再計算（手入力も可）。</div>
-        </div>
-
-        <div class="section" id="yearlyBlock" style="display:none">
-          <h2>2) 稼働時間（<span style="color:var(--accent-strong)">年収ベース</span>）</h2>
-          <div class="row"><div class="label">年間の稼働日数</div><input id="yDays" type="number" inputmode="numeric" min="1" max="366" step="1" value="240" /></div>
-          <div class="help err" id="err_yDays"></div>
-          <div class="row"><div class="label">1日の労働時間</div><input id="yHoursPerDay" type="text" inputmode="decimal" placeholder="例：7.5" value="8" /></div>
-          <div class="help err" id="err_yHoursPerDay"></div>
-          <div class="row"><div class="label">年間の稼働時間</div><input id="yHours" type="number" min="1" step="1" value="1920" /></div>
-          <div class="help">※ 上の2項目を変更すると自動で再計算（手入力も可）。</div>
-        </div>
-
-        <div class="section">
-          <h2>3) 所要時間</h2>
-          <div class="row">
-            <div class="label">所要時間（h）</div>
-            <div class="slider-row">
-              <input id="useHours" type="number" inputmode="decimal" min="0" step="0.25" value="1.0" />
-              <input id="useHoursRange" type="range" min="0" max="12" step="0.25" />
-            </div>
+    <section class="card" aria-label="入力">
+      <!-- ① 支出額：スライダー左 / 入力欄 右（初期値 100,000円） -->
+      <div class="field">
+        <div class="label big">① 支出額（円）</div>
+        <div class="range-row" title="支出額スライダー">
+          <input id="spendRange" type="range" min="0" max="1000000" step="1000" value="100000" />
+          <div class="yen-input compact">
+            <span class="prefix">¥</span>
+            <input id="spend" class="money" type="text" inputmode="numeric" value="100,000" autocomplete="off" />
           </div>
         </div>
       </div>
 
-      <!-- 結果 -->
-      <div class="card">
-        <div class="section">
-          <h2>結果</h2>
-          <div class="result">
-            <div class="tile">
-              <h3>時間単価（税込/ベース×上乗せ率）</h3>
-              <div class="main-figure" id="hourly">–</div>
-              <div class="help">社保上乗せ率（標準）：<b id="socRateLabel">–</b></div>
-              <div class="help">1分あたり：<b id="perMin">–</b></div>
-            </div>
-
-            <div class="tile">
-              <h3>所要時間のコスト</h3>
-              <div class="figure-row">
-                <div class="main-figure" id="cost">–</div>
-                <div class="accent-chip" id="costTimes12">（×12＝—）</div>
-              </div>
-              <div class="help">15分：<b id="c15">–</b> ／ 30分：<b id="c30">–</b> ／ 1時間：<b id="c60">–</b></div>
-            </div>
-
-            <div class="tile">
-              <h3>前提（現在の設定）</h3>
-              <div class="grid-2">
-                <div>
-                  <div class="help">給与ベース</div>
-                  <div id="baseKind" style="font-weight:700">月給</div>
-                </div>
-                <div>
-                  <div class="help">社保上乗せ</div>
-                  <div id="vhOverheadSoc" style="font-weight:700">なし</div>
-                </div>
-              </div>
-              <div class="hr"></div>
-              <div class="grid-2">
-                <div>
-                  <div class="help">対象給与</div>
-                  <div id="vhSalary" style="font-weight:700">–</div>
-                </div>
-                <div>
-                  <div class="help">稼働時間（基準）</div>
-                  <div id="vhWorkH" style="font-weight:700">–</div>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <button id="copyBtn" class="btn" title="結果をクリップボードにコピー">コピー</button>
-              <button id="resetBtn" class="btn secondary">リセット</button>
-            </div>
+      <!-- ② 限界利益率：スライダー + 直接入力（0.1%刻み・初期値54.7%） -->
+      <div class="field">
+        <div class="label big">② 御社の限界利益率（％）</div>
+        <div class="helper">※変動損益計算書もしくは月次決算速報サービスにてご確認ください</div>
+        <div class="range-row">
+          <!-- 5.0% 〜 95.0% -->
+          <input id="cmr" type="range" min="5" max="95" step="0.1" value="54.7" aria-label="限界利益率スライダー" />
+          <div class="pctbox">
+            <input id="cmrInput" class="pct" type="text" inputmode="decimal" value="54.7" aria-label="限界利益率(直接入力)" />
+            <span class="unit">%</span>
           </div>
         </div>
-        <div class="footer">
-          <div class="note">※ このツールは、単純な換算法（時間単価＝給与÷稼働時間）に基づきます。労基法上の一般的な所定労働時間（1日8時間・週40時間）に合わせ、初期値を 8h×20日/月・8h×240日/年としてあります。また、社保上乗せは標準率を使用しており、実際の料率は保険者・業種・地域・年度等により異なります。</div>
+
+        <!-- 参考見出し -->
+        <div class="ref-title">参考：産業ごとの全国平均</div>
+        <!-- 業種チップ -->
+        <div class="chip-grid" aria-label="業種プリセット">
+          <button class="chip" data-pct="54.7"><span class="nm">全産業</span><span class="val">54.7%</span></button>
+          <button class="chip" data-pct="65.7"><span class="nm">漁業</span><span class="val">65.7%</span></button>
+          <button class="chip" data-pct="48.0"><span class="nm">建設業</span><span class="val">48.0%</span></button>
+          <button class="chip" data-pct="58.0"><span class="nm">製造業</span><span class="val">58.0%</span></button>
+          <button class="chip" data-pct="29.7"><span class="nm">卸売業</span><span class="val">29.7%</span></button>
+          <button class="chip" data-pct="35.7"><span class="nm">小売業</span><span class="val">35.7%</span></button>
+          <button class="chip" data-pct="82.4"><span class="nm">宿泊業</span><span class="val">82.4%</span></button>
+          <button class="chip" data-pct="64.2"><span class="nm">飲食業</span><span class="val">64.2%</span></button>
         </div>
       </div>
-    </div>
 
-    <div class="credit"><span id="creditText">Copyright (c) 2025 税理士法人松本会計事務所 All Rights Reserved. / r21</span></div>
+      <div class="field">
+        <button id="calc" class="btn" type="button">売上相当額を計算</button>
+      </div>
+      <div class="field">
+        <button id="reset" class="btn secondary" type="button">リセット</button>
+      </div>
+
+      <div class="result" id="resultArea" hidden>
+        <div class="label big">御社の売上相当額</div>
+        <div class="amount" id="sales"></div>
+        <div class="statement" id="statement"></div>
+        <div class="note">
+          ※ 計算式：<b>御社の売上相当額 ＝ 支出額 ÷（限界利益率 / 100）</b><br>
+          ※各産業平均は令和7年版TKC経営指標（BAST）を参照しています。
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      Copyright (c) <span id="yyyy"></span> 税理士法人松本会計事務所 All Rights Reserved. / r7
+    </footer>
   </div>
 
-<script>
-(function(){
-  'use strict';
-  var VERSION='r21';
-  var SOC_RATE=16.0; // 標準的な事業主負担率（概算）
-  function el(id){ return document.getElementById(id); }
-  function on(id,ev,fn){ var e=el(id); if(e){ if(e.addEventListener){ e.addEventListener(ev,fn,false);} else if(e.attachEvent){ e.attachEvent('on'+ev,fn);} } }
-  function fmtJPY(n){ try{ return new Intl.NumberFormat('ja-JP',{style:'currency',currency:'JPY',maximumFractionDigits:0}).format(n); }catch(_){ try{ return '¥'+(Math.round(n)).toLocaleString('ja-JP'); }catch(__){ return '¥'+String(Math.round(n)); } } }
-  function parseMoney(text){ var s=String(text||''); var out=''; for(var i=0;i<s.length;i++){ var c=s.charAt(i); if((c>='0' && c<='9') || c==='.'){ out+=c; } } return Number(out||0); }
-  function clamp(v,min,max){ v=Number(v); if(!isFinite(v)) return v; if(v<min) return min; if(v>max) return max; return v; }
+  <script>
+    const $ = (s)=>document.querySelector(s);
 
-  var state={ mode:'monthly', salary:300000, overheadSoc:false, mDays:20, mHoursPerDay:8, mHours:160, yDays:240, yHoursPerDay:8, yHours:1920, useHours:1 };
+    const spendEl = $('#spend');
+    const spendRange = $('#spendRange');
 
-  function monthlyHours(){ return Number(state.mHours)||0; }
-  function yearlyHours(){ return Number(state.yHours)||0; }
-  function baseSalary(){ return Number(state.salary)||0; }
-  function loadedSalary(){ return baseSalary()*(1+(state.overheadSoc? SOC_RATE/100:0)); }
-  function hourlyRate(){ var denom = state.mode==='monthly'? monthlyHours(): state.mode==='yearly'? yearlyHours(): 1; var rate = denom>0? loadedSalary()/denom:0; return Math.round(rate); }
-  function costFor(h){ return Math.round(hourlyRate()*(Number(h)||0)); }
+    const cmrRange = $('#cmr');
+    const cmrInput = $('#cmrInput');
 
-  function setSegment(){
-    var bm=el('btnMonthly'), by=el('btnYearly'), bh=el('btnHourly');
-    if(bm) bm.classList.remove('active');
-    if(by) by.classList.remove('active');
-    if(bh) bh.classList.remove('active');
-    if(state.mode==='monthly' && bm) bm.classList.add('active');
-    if(state.mode==='yearly' && by) by.classList.add('active');
-    if(state.mode==='hourly' && bh) bh.classList.add('active');
-    var sl=el('salaryLabel'); if(sl) sl.textContent = state.mode==='monthly'? '月給（税引前）' : (state.mode==='yearly'? '年収（税引前）' : '時給（税引前）');
-  }
-  function syncSalaryRange(){ var r=el('salaryRange'); if(!r) return; if(state.mode==='monthly'){ r.min=100000; r.max=2000000; r.step=1000; } else if(state.mode==='yearly'){ r.min=1000000; r.max=30000000; r.step=10000; } else { r.min=800; r.max=10000; r.step=10; } r.value=String(baseSalary()); }
-  function syncUseHoursRange(){ var r=el('useHoursRange'); if(r){ r.min=0; r.max=12; r.step=0.25; r.value=String(state.useHours||0);} }
-  function updateVisibility(){ var mb=el('monthlyBlock'), yb=el('yearlyBlock'); if(state.mode==='monthly'){ if(mb) mb.style.display=''; if(yb) yb.style.display='none'; } else if(state.mode==='yearly'){ if(mb) mb.style.display='none'; if(yb) yb.style.display=''; } else { if(mb) mb.style.display='none'; if(yb) yb.style.display='none'; } }
+    const resultArea = $('#resultArea');
+    const salesEl = $('#sales');
+    const statementEl = $('#statement');
 
-  function updateView(){
-    setSegment();
-    syncSalaryRange();
-    syncUseHoursRange();
-    updateVisibility();
+    $('#yyyy').textContent = String(new Date().getFullYear());
 
-    var vhs=el('vhSalary'); if(vhs) vhs.textContent = fmtJPY(baseSalary());
-    var vhO=el('vhOverheadSoc'); if(vhO) vhO.textContent = state.overheadSoc? ('あり（'+SOC_RATE+'%）') : 'なし';
-    var sr=el('socRateLabel'); if(sr) sr.textContent = SOC_RATE+'%';
-    var workH = state.mode==='monthly'? monthlyHours() : (state.mode==='yearly'? yearlyHours() : null);
-    var vhw=el('vhWorkH'); if(vhw) vhw.textContent = (workH==null)? '—' : (workH.toLocaleString('ja-JP')+' 時間/'+(state.mode==='monthly'?'月':'年'));
+    function parseMoney(text){ if(!text) return NaN; return Number(String(text).replace(/[^\d.-]/g,'')); }
+    function formatJPY(n){ return n.toLocaleString('ja-JP',{style:'currency',currency:'JPY',maximumFractionDigits:0}); }
+    function formatPlainJPY(n){ return n.toLocaleString('ja-JP',{maximumFractionDigits:0}); }
+    function parsePct(text){
+      if(text==null) return NaN;
+      const t = String(text).replace('%','').replace(',', '.').trim();
+      return Number(t);
+    }
+    function clamp(v, min, max){ return Math.max(min, Math.min(max, v)); }
 
-    var h=hourlyRate();
-    var hh=el('hourly'); if(hh) hh.textContent = fmtJPY(h)+' / 時間';
-    var pm=el('perMin'); if(pm) pm.textContent = fmtJPY(Math.round(h/60));
+    // 支出額：スライダー → 入力欄
+    spendRange.addEventListener('input', ()=>{
+      const val = Number(spendRange.value);
+      spendEl.value = formatPlainJPY(val);
+    });
+    // 支出額：入力欄 → スライダー
+    spendEl.addEventListener('input', (e)=>{
+      const raw = parseMoney(e.target.value);
+      if(isNaN(raw)) return;
+      e.target.value = formatPlainJPY(raw);
+      spendRange.value = clamp(raw, Number(spendRange.min), Number(spendRange.max));
+    });
+    spendRange.dispatchEvent(new Event('input')); // 初期同期
 
-    var useH=Number(state.useHours)||0;
-    var cVal=costFor(useH);
-    var cst=el('cost'); if(cst) cst.textContent = fmtJPY(cVal);
-    var ct12=el('costTimes12'); if(ct12) ct12.textContent = '（×12＝'+fmtJPY(cVal*12)+'）';
-    var c15=el('c15'); if(c15) c15.textContent = fmtJPY(costFor(0.25));
-    var c30=el('c30'); if(c30) c30.textContent = fmtJPY(costFor(0.5));
-    var c60=el('c60'); if(c60) c60.textContent = fmtJPY(costFor(1));
+    // ===== 限界利益率 入力体験の改善 =====
+    // スライダー → 入力（入力欄にフォーカスがある間は上書きしない）
+    function syncCmrFromSlider(){
+      if(document.activeElement === cmrInput) return;        // ← これで削除操作を邪魔しない
+      cmrInput.value = Number(cmrRange.value).toFixed(1);
+    }
+    cmrRange.addEventListener('input', syncCmrFromSlider);
+    syncCmrFromSlider();
 
-    var bk=el('baseKind'); if(bk) bk.textContent = state.mode==='monthly'? '月給' : (state.mode==='yearly'? '年収' : '時給');
-  }
+    // 入力中は値を上書きしない。確定タイミング（blur/Enter/計算実行）で丸めて反映。
+    function commitCmrInput(){
+      const min = Number(cmrRange.min), max = Number(cmrRange.max);
+      const v = parsePct(cmrInput.value);
+      if(isNaN(v)){ cmrInput.value = Number(cmrRange.value).toFixed(1); return; }
+      const clamped = clamp(v, min, max);
+      cmrRange.value = clamped.toFixed(1);
+      cmrInput.value = clamped.toFixed(1);
+    }
 
-  function formatMoneyToInput(num){ var s=el('salary'); if(s) s.value=(Number(num)||0).toLocaleString('ja-JP'); }
-  function showToast(msg){ var t=document.createElement('div'); t.className='toast'; t.textContent=msg; document.body.appendChild(t); setTimeout(function(){ t.remove(); }, 1500); }
+    cmrInput.addEventListener('input', ()=>{
+      // 入力中はスライダーの位置だけ可能なら更新（範囲外や空欄は無視）
+      const v = parsePct(cmrInput.value);
+      const min = Number(cmrRange.min), max = Number(cmrRange.max);
+      if(!isNaN(v) && v>=min && v<=max){
+        cmrRange.value = Number(v).toFixed(1);
+      }
+    });
+    cmrInput.addEventListener('blur', commitCmrInput);
 
-  function recalcMonthly(soft){ if(soft===undefined) soft=true; var d=Number(state.mDays); var hpd=parseFloat(state.mHoursPerDay); if(!isFinite(d)||isNaN(hpd)) return; if(!soft){ d=clamp(d,1,31); hpd=clamp(hpd,0.1,24); state.mDays=d; state.mHoursPerDay=hpd; var md=el('mDays'); if(md) md.value=String(d); var mhpd=el('mHoursPerDay'); if(mhpd) mhpd.value=String(hpd);} state.mHours=d*hpd; var mh=el('mHours'); if(mh) mh.value=String(state.mHours); }
-  function recalcYearly(soft){ if(soft===undefined) soft=true; var d=Number(state.yDays); var hpd=parseFloat(state.yHoursPerDay); if(!isFinite(d)||isNaN(hpd)) return; if(!soft){ d=clamp(d,1,366); hpd=clamp(hpd,0.1,24); state.yDays=d; state.yHoursPerDay=hpd; var yd=el('yDays'); if(yd) yd.value=String(d); var yhpd=el('yHoursPerDay'); if(yhpd) yhpd.value=String(hpd);} state.yHours=d*hpd; var yh=el('yHours'); if(yh) yh.value=String(state.yHours); }
+    // 計算
+    function calc(){
+      commitCmrInput(); // ← 計算前に入力値を確定
+      const spend = parseMoney(spendEl.value);
+      const pct = parsePct(cmrInput.value);
+      if(isNaN(spend) || spend <= 0){ alert('支出額を正しく入力してください。'); spendEl.focus(); return; }
+      if(isNaN(pct) || pct <= 0){ alert('限界利益率を正しく入力してください。'); cmrInput.focus(); return; }
+      const rate = pct / 100;
+      const salesNeeded = Math.ceil(spend / rate);
+      salesEl.textContent = formatJPY(salesNeeded);
+      statementEl.textContent = `${formatJPY(spend)} の支出は、御社の売上 ${formatJPY(salesNeeded)} に相当します。`;
+      resultArea.hidden = false;
+      resultArea.scrollIntoView({behavior:'smooth', block:'center'});
+    }
 
-  function copySummary(){
-    var base = state.mode==='monthly'? '月給' : (state.mode==='yearly'? '年収' : '時給');
-    var workLine = state.mode==='monthly'? ('稼働時間：'+state.mHours.toLocaleString('ja-JP')+' 時間/月') : (state.mode==='yearly'? ('稼働時間：'+state.yHours.toLocaleString('ja-JP')+' 時間/年') : '稼働時間：—（時給ベース）');
-    var lines=[
-      '【時間単価・コスト可視化】',
-      '給与ベース：'+base,
-      '対象給与：'+fmtJPY(baseSalary()),
-      '社保上乗せ：'+(state.overheadSoc?('あり（'+SOC_RATE+'%）'):'なし'),
-      workLine,
-      '時間単価：'+fmtJPY(hourlyRate())+' /h',
-      '1分あたり：'+fmtJPY(Math.round(hourlyRate()/60)),
-      '15分：'+fmtJPY(costFor(0.25))+' ／ 30分：'+fmtJPY(costFor(0.5))+' ／ 1時間：'+fmtJPY(costFor(1)),
-      '(ver '+VERSION+')'
-    ];
-    var txt=lines.join('\n');
-    try{
-      if(navigator.clipboard && navigator.clipboard.writeText){
-        navigator.clipboard.writeText(txt).then(function(){ showToast('コピーしました'); }).catch(function(){ fallbackCopy(txt); });
-      } else { fallbackCopy(txt); }
-    }catch(_){ fallbackCopy(txt); }
-  }
-  function fallbackCopy(txt){ var ta=document.createElement('textarea'); ta.value=txt; document.body.appendChild(ta); ta.select(); try{ document.execCommand('copy'); }catch(e){} ta.remove(); showToast('コピーしました'); }
+    $('#calc').addEventListener('click', calc);
+    cmrInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); calc(); }});
+    spendEl.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); calc(); }});
 
-  function resetAll(){
-    state={ mode:'monthly', salary:300000, overheadSoc:false, mDays:20, mHoursPerDay:8, mHours:160, yDays:240, yHoursPerDay:8, yHours:1920, useHours:1 };
-    formatMoneyToInput(state.salary);
-    var ov=el('overheadSoc'); if(ov) ov.checked=false;
-    var md=el('mDays'); if(md) md.value='20';
-    var mhpd=el('mHoursPerDay'); if(mhpd) mhpd.value='8';
-    var mh=el('mHours'); if(mh) mh.value='160';
-    var yd=el('yDays'); if(yd) yd.value='240';
-    var yhpd=el('yHoursPerDay'); if(yhpd) yhpd.value='8';
-    var yh=el('yHours'); if(yh) yh.value='1920';
-    var uh=el('useHours'); if(uh) uh.value='1.0';
-    syncUseHoursRange();
-    updateView();
-    save();
-    showToast('リセットしました');
-    var ids=['err_mDays','err_mHoursPerDay','err_yDays','err_yHoursPerDay'];
-    for(var i=0;i<ids.length;i++){ var e=el(ids[i]); if(e) e.style.display='none'; }
-  }
-
-  // イベント
-  on('btnMonthly','click', function(){ state.mode='monthly'; updateView(); save(); });
-  on('btnYearly','click', function(){ state.mode='yearly'; updateView(); save(); });
-  on('btnHourly','click', function(){ state.mode='hourly'; updateView(); save(); });
-
-  on('salary','input', function(e){ state.salary=parseMoney(e.target.value); var r=el('salaryRange'); if(r) r.value=String(baseSalary()); updateView(); save(); });
-  on('salary','blur', function(){ formatMoneyToInput(baseSalary()); });
-  on('salaryRange','input', function(e){ state.salary=Number(e.target.value)||0; formatMoneyToInput(baseSalary()); updateView(); save(); });
-  on('salaryRange','change', function(e){ state.salary=Number(e.target.value)||0; formatMoneyToInput(baseSalary()); updateView(); save(); });
-  on('overheadSoc','change', function(e){ state.overheadSoc=!!e.target.checked; updateView(); save(); });
-
-  on('mDays','input', function(e){ var n=Number(e.target.value); if(isFinite(n)){ state.mDays=n; recalcMonthly(true); updateView(); save(); } });
-  on('mDays','blur', function(e){ var n=Number(e.target.value); if(!isFinite(n)) n=20; var raw=n; n=clamp(n,1,31); if(raw>31){ showErr('err_mDays','月の稼働日数の上限は31日です（入力値を補正しました）'); } state.mDays=n; e.target.value=String(n); recalcMonthly(false); updateView(); save(); });
-  on('mHoursPerDay','input', function(e){ var v=e.target.value; if(v==='') return; var n=parseFloat(v); if(!isNaN(n)){ state.mHoursPerDay=n; recalcMonthly(true); updateView(); save(); } });
-  on('mHoursPerDay','blur', function(e){ var v=e.target.value.trim(); var n=parseFloat(v); if(isNaN(n)) n=8; var raw=n; n=clamp(n,0.1,24); if(raw>24){ showErr('err_mHoursPerDay','1日の労働時間の上限は24時間です（入力値を補正しました）'); } state.mHoursPerDay=n; e.target.value=String(n); recalcMonthly(false); updateView(); save(); });
-  on('mHours','input', function(e){ var n=Number(e.target.value); if(isFinite(n)){ state.mHours=n; updateView(); save(); } });
-
-  on('yDays','input', function(e){ var n=Number(e.target.value); if(isFinite(n)){ state.yDays=n; recalcYearly(true); updateView(); save(); } });
-  on('yDays','blur', function(e){ var n=Number(e.target.value); if(!isFinite(n)) n=240; var raw=n; n=clamp(n,1,366); if(raw>366){ showErr('err_yDays','年間の稼働日数の上限は366日です（入力値を補正しました）'); } state.yDays=n; e.target.value=String(n); recalcYearly(false); updateView(); save(); });
-  on('yHoursPerDay','input', function(e){ var v=e.target.value; if(v==='') return; var n=parseFloat(v); if(!isNaN(n)){ state.yHoursPerDay=n; recalcYearly(true); updateView(); save(); } });
-  on('yHoursPerDay','blur', function(e){ var v=e.target.value.trim(); var n=parseFloat(v); if(isNaN(n)) n=8; var raw=n; n=clamp(n,0.1,24); if(raw>24){ showErr('err_yHoursPerDay','1日の労働時間の上限は24時間です（入力値を補正しました）'); } state.yHoursPerDay=n; e.target.value=String(n); recalcYearly(false); updateView(); save(); });
-  on('yHours','input', function(e){ var n=Number(e.target.value); if(isFinite(n)){ state.yHours=n; updateView(); save(); } });
-
-  on('useHours','input', function(e){ var n=parseFloat(e.target.value); if(!isNaN(n)){ state.useHours=n; var r=el('useHoursRange'); if(r) r.value=String(state.useHours); updateView(); save(); } });
-  on('useHoursRange','input', function(e){ state.useHours=Number(e.target.value)||0; var u=el('useHours'); if(u) u.value=String(state.useHours); updateView(); save(); });
-
-  on('copyBtn','click', copySummary);
-  on('resetBtn','click', resetAll);
-
-  // メッセージ表示（エラー表示の共通化）
-  var errTimers={};
-  function showErr(id,msg){ var e=el(id); if(!e) return; e.textContent=msg; e.style.display='block'; clearTimeout(errTimers[id]); errTimers[id]=setTimeout(function(){ e.style.display='none'; }, 2600); }
-
-  // 永続化
-  var KEY='rate_tool_r21';
-  function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
-  function load(){ try{ var s=JSON.parse(localStorage.getItem(KEY)||localStorage.getItem('rate_tool_r20')||localStorage.getItem('rate_tool_r19')||localStorage.getItem('rate_tool_r18')||localStorage.getItem('rate_tool_r17')||'null'); if(s){ state=s; } }catch(e){} }
-
-  function init(){
-    load();
-    formatMoneyToInput(state.salary);
-    var ov=el('overheadSoc'); if(ov) ov.checked=!!state.overheadSoc;
-    var md=el('mDays'); if(md) md.value=state.mDays; var mhpd=el('mHoursPerDay'); if(mhpd) mhpd.value=state.mHoursPerDay; var mh=el('mHours'); if(mh) mh.value=state.mHours;
-    var yd=el('yDays'); if(yd) yd.value=state.yDays; var yhpd=el('yHoursPerDay'); if(yhpd) yhpd.value=state.yHoursPerDay; var yh=el('yHours'); if(yh) yh.value=state.yHours;
-    var uh=el('useHours'); if(uh) uh.value=state.useHours; syncUseHoursRange();
-    syncSalaryRange();
-    updateVisibility();
-    updateView();
-
-    var year=(new Date()).getFullYear();
-    var cr=el('creditText'); if(cr) cr.textContent='Copyright (c) '+year+' 税理士法人松本会計事務所 All Rights Reserved. / '+VERSION;
-  }
-
-  if(document.readyState==='interactive' || document.readyState==='complete'){ init(); }
-  if(window.addEventListener){ window.addEventListener('DOMContentLoaded', init, false); }
-})();
-</script>
+    // リセット（初期値へ）
+    $('#reset').addEventListener('click', ()=>{
+      spendRange.value = 100000; spendRange.dispatchEvent(new Event('input'));
+      cmrRange.value = 54.7; syncCmrFromSlider();
+      resultArea.hidden = true; window.scrollTo({top:0, behavior:'smooth'});
+    });
+  </script>
 </body>
 </html>

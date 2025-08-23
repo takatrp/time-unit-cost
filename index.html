@@ -72,7 +72,6 @@
 <body>
   <div class="container">
     <header>
-      <span class="badge">人件費の見える化</span>
       <h1>人件費見える化ツール</h1>
     </header>
 
@@ -195,13 +194,13 @@
       </div>
     </div>
 
-    <div class="credit"><span id="creditText">Copyright (c) 2025 税理士法人松本会計事務所 All Rights Reserved. / r21</span></div>
+    <div class="credit"><span id="creditText">Copyright (c) 2025 税理士法人松本会計事務所 All Rights Reserved. / r23</span></div>
   </div>
 
 <script>
 (function(){
   'use strict';
-  var VERSION='r21';
+  var VERSION='r23';
   var SOC_RATE=16.0; // 標準的な事業主負担率（概算）
   function el(id){ return document.getElementById(id); }
   function on(id,ev,fn){ var e=el(id); if(e){ if(e.addEventListener){ e.addEventListener(ev,fn,false);} else if(e.attachEvent){ e.attachEvent('on'+ev,fn);} } }
@@ -232,6 +231,10 @@
   function syncUseHoursRange(){ var r=el('useHoursRange'); if(r){ r.min=0; r.max=12; r.step=0.25; r.value=String(state.useHours||0);} }
   function updateVisibility(){ var mb=el('monthlyBlock'), yb=el('yearlyBlock'); if(state.mode==='monthly'){ if(mb) mb.style.display=''; if(yb) yb.style.display='none'; } else if(state.mode==='yearly'){ if(mb) mb.style.display='none'; if(yb) yb.style.display=''; } else { if(mb) mb.style.display='none'; if(yb) yb.style.display='none'; } }
 
+  function defaultSalaryFor(mode){ if(mode==='hourly') return 2000; if(mode==='yearly') return 3600000; return 300000; }
+  function resetSalaryForMode(){ state.salary = defaultSalaryFor(state.mode); syncSalaryRange(); var sr=el('salaryRange'); if(sr) sr.value=String(state.salary); formatMoneyToInput(state.salary); }
+  function defaultSalaryFor(mode){ if(mode==='hourly') return 2000; if(mode==='yearly') return 3600000; return 300000; }
+  function resetSalaryForMode(){ state.salary = defaultSalaryFor(state.mode); syncSalaryRange(); var sr=el('salaryRange'); if(sr) sr.value=String(state.salary); formatMoneyToInput(state.salary); }
   function updateView(){
     setSegment();
     syncSalaryRange();
@@ -279,7 +282,8 @@
       '15分：'+fmtJPY(costFor(0.25))+' ／ 30分：'+fmtJPY(costFor(0.5))+' ／ 1時間：'+fmtJPY(costFor(1)),
       '(ver '+VERSION+')'
     ];
-    var txt=lines.join('\n');
+    var txt=lines.join('
+');
     try{
       if(navigator.clipboard && navigator.clipboard.writeText){
         navigator.clipboard.writeText(txt).then(function(){ showToast('コピーしました'); }).catch(function(){ fallbackCopy(txt); });
@@ -308,9 +312,9 @@
   }
 
   // イベント
-  on('btnMonthly','click', function(){ state.mode='monthly'; updateView(); save(); });
-  on('btnYearly','click', function(){ state.mode='yearly'; updateView(); save(); });
-  on('btnHourly','click', function(){ state.mode='hourly'; updateView(); save(); });
+  on('btnMonthly','click', function(){ state.mode='monthly'; resetSalaryForMode(); updateView(); save(); });
+  on('btnYearly','click', function(){ state.mode='yearly'; resetSalaryForMode(); updateView(); save(); });
+  on('btnHourly','click', function(){ state.mode='hourly'; resetSalaryForMode(); updateView(); save(); });
 
   on('salary','input', function(e){ state.salary=parseMoney(e.target.value); var r=el('salaryRange'); if(r) r.value=String(baseSalary()); updateView(); save(); });
   on('salary','blur', function(){ formatMoneyToInput(baseSalary()); });
@@ -341,7 +345,7 @@
   function showErr(id,msg){ var e=el(id); if(!e) return; e.textContent=msg; e.style.display='block'; clearTimeout(errTimers[id]); errTimers[id]=setTimeout(function(){ e.style.display='none'; }, 2600); }
 
   // 永続化
-  var KEY='rate_tool_r21';
+  var KEY='rate_tool_r23';
   function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
   function load(){ try{ var s=JSON.parse(localStorage.getItem(KEY)||localStorage.getItem('rate_tool_r20')||localStorage.getItem('rate_tool_r19')||localStorage.getItem('rate_tool_r18')||localStorage.getItem('rate_tool_r17')||'null'); if(s){ state=s; } }catch(e){} }
 

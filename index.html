@@ -5,68 +5,105 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>人件費見える化ツール</title>
   <style>
-    :root{ --bg:#f5f8fb; --card:#ffffff; --ink:#1f2937; --muted:#6b7280; --accent:#3aa2c8; --accent-strong:#2384a8; --line:#e7eef3; }
+    :root{
+      --bg:#f5f8fb; --card:#ffffff; --ink:#1f2937; --muted:#6b7280;
+      --accent:#3aa2c8; --accent-strong:#2384a8; --line:#e7eef3;
+    }
     *{box-sizing:border-box}
     html,body{height:100%}
-    body{ margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic","Meiryo",Arial,sans-serif; color:var(--ink); background:var(--bg);}   
+    body{
+      margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,
+      "Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic","Meiryo",Arial,sans-serif;
+      color:var(--ink); background:var(--bg);
+    }
     .container{max-width:1100px; margin:10px auto; padding:0 10px;}
-    header{display:flex; gap:4px; align-items:center; margin-bottom:6px; flex-wrap:nowrap;}
-    .badge{background:linear-gradient(180deg,var(--accent),var(--accent-strong)); color:#fff; padding:3px 7px; border-radius:999px; font-size:10.5px;}
-    h1{font-size:20px; margin:0; font-weight:700; letter-spacing:.3px; line-height:1.05; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1;}
-    @media (orientation:portrait){ h1{ font-size:clamp(18px,5.6vw,22px); } } }
+    header{display:flex; gap:6px; align-items:center; margin-bottom:6px;}
+    h1{
+      font-weight:700; letter-spacing:.3px; line-height:1.05; white-space:nowrap;
+      overflow:hidden; text-overflow:ellipsis; flex:1; margin:0;
+      font-size:20px;
+    }
+    @media (orientation:portrait){ h1{ font-size:clamp(18px,5.6vw,22px); } }
 
     .grid{display:grid; grid-template-columns:1fr; gap:10px;}
-    @media (min-width:900px){ .grid{grid-template-columns: 1.1fr 0.9fr;} }
-    @media (max-width:899px) and (orientation: landscape){ .grid{grid-template-columns:1fr 1fr;} }
+    @media (min-width:900px){ .grid{grid-template-columns:1.1fr 0.9fr;} }
+    @media (max-width:899px) and (orientation:landscape){ .grid{grid-template-columns:1fr 1fr;} }
 
-    .card{background:var(--card); border:1px solid var(--line); border-radius:10px; box-shadow:0 2px 10px rgba(0,0,0,.04);}    
-    .section{padding:10px 10px 4px 10px; border-bottom:1px solid var(--line);}   
+    .card{background:var(--card); border:1px solid var(--line); border-radius:10px; box-shadow:0 2px 10px rgba(0,0,0,.04);}
+    .section{padding:10px 10px 4px 10px; border-bottom:1px solid var(--line);}
     .section:last-child{border-bottom:none; padding-bottom:10px;}
     .section h2{margin:0 0 4px 0; font-size:14px;}
 
-    .help{font-size:11px; color:var(--muted);}    
-    .row{display:grid; grid-template-columns:130px 1fr; gap:8px; align-items:center; padding:4px 0;} 
-    .row + .row{border-top:1px dashed var(--line);}    
-    .label{color:var(--muted); font-size:13.5px;}
+    .help{font-size:11px; color:var(--muted);}
+    .row{
+      display:grid; grid-template-columns:130px 1fr; gap:8px; align-items:center; padding:4px 0;
+    }
+    .row + .row{border-top:1px dashed var(--line);}
+    .label{color:var(--muted); font-size:13.5px; font-weight:600;}
 
-    input[type="text"], input[type="number"], select{ width:100%; padding:7px 9px; font-size:13.5px; border-radius:9px; border:1px solid var(--line); background:#f9fbfd; outline:none; transition:border .15s, box-shadow .15s, background .15s; }
-    input[type="text"]:focus, input[type="number"]:focus, select:focus{ border-color:var(--accent); box-shadow:0 0 0 3px rgba(58,162,200,.18); background:#fff; }
+    input[type="text"], input[type="number"], select{
+      width:100%; padding:7px 9px; font-size:13.5px; border-radius:9px;
+      border:1px solid var(--line); background:#f9fbfd; outline:none;
+      transition:border .15s, box-shadow .15s, background .15s;
+    }
+    input[type="text"]:focus, input[type="number"]:focus, select:focus{
+      border-color:var(--accent); box-shadow:0 0 0 3px rgba(58,162,200,.18); background:#fff;
+    }
 
     /* スライダー */
     .slider-row{display:grid; grid-template-columns:1fr; gap:3px;}
     input[type="range"]{ width:100%; height:26px; -webkit-appearance:none; appearance:none; background:transparent; }
-    input[type="range"]::-webkit-slider-runnable-track{ height:6px; background:linear-gradient(90deg,var(--accent) 0%, var(--accent-strong) 100%); border-radius:999px; opacity:.35; }
-    input[type="range"]::-moz-range-track{ height:6px; background:linear-gradient(90deg,var(--accent) 0%, var(--accent-strong) 100%); border-radius:999px; opacity:.35; }
+    input[type="range"]::-webkit-slider-runnable-track{
+      height:6px; background:linear-gradient(90deg,var(--accent) 0%, var(--accent-strong) 100%);
+      border-radius:999px; opacity:.35;
+    }
+    input[type="range"]::-moz-range-track{
+      height:6px; background:linear-gradient(90deg,var(--accent) 0%, var(--accent-strong) 100%);
+      border-radius:999px; opacity:.35;
+    }
     /* つまみ：白抜き＋青の縁取り */
-    input[type="range"]::-webkit-slider-thumb{ -webkit-appearance:none; appearance:none; width:18px; height:18px; border-radius:50%; background:#fff; border:3px solid var(--accent-strong); margin-top:-6px; box-shadow:0 2px 6px rgba(0,0,0,.15); }
-    input[type="range"]::-moz-range-thumb{ width:18px; height:18px; border-radius:50%; background:#fff; border:3px solid var(--accent-strong); box-shadow:0 2px 6px rgba(0,0,0,.15); }
+    input[type="range"]::-webkit-slider-thumb{
+      -webkit-appearance:none; appearance:none; width:18px; height:18px; border-radius:50%;
+      background:#fff; border:3px solid var(--accent-strong); margin-top:-6px; box-shadow:0 2px 6px rgba(0,0,0,.15);
+    }
+    input[type="range"]::-moz-range-thumb{
+      width:18px; height:18px; border-radius:50%; background:#fff; border:3px solid var(--accent-strong);
+      box-shadow:0 2px 6px rgba(0,0,0,.15);
+    }
 
     .seg{display:flex; gap:6px;}
-    .seg button{flex:1; border:1px solid var(--line); background:#f3f7fb; color:#111; padding:6px 8px; border-radius:9px; cursor:pointer; font-weight:600; font-size:13.5px;}
+    .seg button{
+      flex:1; border:1px solid var(--line); background:#f3f7fb; color:#111; padding:6px 8px;
+      border-radius:9px; cursor:pointer; font-weight:700; font-size:13.5px;
+    }
     .seg button.active{background:linear-gradient(180deg,var(--accent),var(--accent-strong)); color:#fff; border-color:transparent;}
 
     .result{ display:grid; grid-template-columns:1fr; gap:8px; padding:10px; }
-    .tile{border:1px solid var(--line); border-radius:9px; padding:8px; background:linear-gradient(180deg,#ffffff 0%, #f7fbfe 100%);}    
-    .tile h3{margin:0 0 3px 0; font-size:12.5px; color:var(--muted);}    
-    .main-figure{font-size:24px; font-weight:600; letter-spacing:.2px; color:var(--accent-strong);} 
+    .tile{border:1px solid var(--line); border-radius:9px; padding:8px; background:linear-gradient(180deg,#ffffff 0%, #f7fbfe 100%);}
+    .tile h3{margin:0 0 3px 0; font-size:12.5px; color:var(--muted);}
+    .main-figure{font-size:24px; font-weight:600; letter-spacing:.2px; color:var(--accent-strong);}
 
     .figure-row{ display:flex; align-items:baseline; justify-content:space-between; gap:8px; }
+    .accent-chip{
+      font-size:13px; font-weight:700; color:var(--accent-strong);
+      background:rgba(58,162,200,.12); border:1px solid rgba(35,132,168,.36);
+      padding:3px 8px; border-radius:999px; white-space:nowrap;
+    }
 
-    /* 目立つ年間換算チップ */
-    .accent-chip{ font-size:13px; font-weight:700; color:var(--accent-strong); background:rgba(58,162,200,.12); border:1px solid rgba(35,132,168,.36); padding:3px 8px; border-radius:999px; white-space:nowrap; }
-
-    .btn{display:inline-flex; gap:6px; align-items:center; padding:7px 10px; background:linear-gradient(180deg,var(--accent),var(--accent-strong)); border:none; color:#fff; border-radius:9px; cursor:pointer; font-weight:700;}
-    .btn.secondary{background:#eef5f9; color:var(--accent-strong); border:1px solid var(--line);} 
+    .btn{display:inline-flex; gap:6px; align-items:center; padding:7px 10px;
+      background:linear-gradient(180deg,var(--accent),var(--accent-strong)); border:none; color:#fff;
+      border-radius:9px; cursor:pointer; font-weight:700;}
+    .btn.secondary{background:#eef5f9; color:var(--accent-strong); border:1px solid var(--line);}
 
     .footer{font-size:11px; color:#6b7280; padding:6px 10px 10px;}
     .grid-2{display:grid; grid-template-columns:1fr 1fr; gap:6px;}
     .hr{height:1px; background:var(--line); margin:6px 0;}
-
     .credit{ text-align:center; font-size:12px; color:#7b8794; padding:10px 0 12px; }
-    .switch{ display:flex; align-items:center; gap:8px; }
 
+    .switch{ display:flex; align-items:center; gap:8px; }
     .err{ color:#b91c1c; font-size:11.5px; display:none; }
-    .toast{ position:fixed; left:8px; right:8px; bottom:8px; background:#111; color:#fff; padding:8px 10px; border-radius:8px; opacity:0.95; font-size:12px; z-index:9999; text-align:center; }
+    .toast{ position:fixed; left:8px; right:8px; bottom:8px; background:#111; color:#fff;
+      padding:8px 10px; border-radius:8px; opacity:0.95; font-size:12px; z-index:9999; text-align:center; }
   </style>
 </head>
 <body>
@@ -80,6 +117,7 @@
       <div class="card">
         <div class="section">
           <h2>1) 入力</h2>
+
           <div class="row">
             <div class="label">給与の単位</div>
             <div class="seg" role="tablist" aria-label="給与の単位">
@@ -88,6 +126,7 @@
               <button id="btnYearly" aria-selected="false">年収</button>
             </div>
           </div>
+
           <div class="row">
             <div class="label"><span id="salaryLabel">月給（税引前）</span></div>
             <div class="slider-row">
@@ -95,6 +134,7 @@
               <input id="salaryRange" type="range" min="100000" max="2000000" step="1000" />
             </div>
           </div>
+
           <div class="row">
             <div class="label">社保上乗せ</div>
             <div class="switch">
@@ -194,27 +234,45 @@
       </div>
     </div>
 
-    <div class="credit"><span id="creditText">Copyright (c) 2025 税理士法人松本会計事務所 All Rights Reserved. / r23</span></div>
+    <div class="credit"><span id="creditText">Copyright (c) 2025 税理士法人松本会計事務所 All Rights Reserved. / r24</span></div>
   </div>
 
 <script>
 (function(){
   'use strict';
-  var VERSION='r23';
+  var VERSION='r24';
   var SOC_RATE=16.0; // 標準的な事業主負担率（概算）
+
   function el(id){ return document.getElementById(id); }
   function on(id,ev,fn){ var e=el(id); if(e){ if(e.addEventListener){ e.addEventListener(ev,fn,false);} else if(e.attachEvent){ e.attachEvent('on'+ev,fn);} } }
-  function fmtJPY(n){ try{ return new Intl.NumberFormat('ja-JP',{style:'currency',currency:'JPY',maximumFractionDigits:0}).format(n); }catch(_){ try{ return '¥'+(Math.round(n)).toLocaleString('ja-JP'); }catch(__){ return '¥'+String(Math.round(n)); } } }
-  function parseMoney(text){ var s=String(text||''); var out=''; for(var i=0;i<s.length;i++){ var c=s.charAt(i); if((c>='0' && c<='9') || c==='.'){ out+=c; } } return Number(out||0); }
+
+  function fmtJPY(n){
+    try{ return new Intl.NumberFormat('ja-JP',{style:'currency',currency:'JPY',maximumFractionDigits:0}).format(n); }
+    catch(_){ try{ return '¥'+(Math.round(n)).toLocaleString('ja-JP'); }catch(__){ return '¥'+String(Math.round(n)); } }
+  }
+  function parseMoney(text){
+    var s=String(text||''); var out='';
+    for(var i=0;i<s.length;i++){ var c=s.charAt(i); if((c>='0' && c<='9') || c==='.'){ out+=c; } }
+    return Number(out||0);
+  }
   function clamp(v,min,max){ v=Number(v); if(!isFinite(v)) return v; if(v<min) return min; if(v>max) return max; return v; }
 
-  var state={ mode:'monthly', salary:300000, overheadSoc:false, mDays:20, mHoursPerDay:8, mHours:160, yDays:240, yHoursPerDay:8, yHours:1920, useHours:1 };
+  var state={
+    mode:'monthly', salary:300000, overheadSoc:false,
+    mDays:20, mHoursPerDay:8, mHours:160,
+    yDays:240, yHoursPerDay:8, yHours:1920,
+    useHours:1
+  };
 
   function monthlyHours(){ return Number(state.mHours)||0; }
   function yearlyHours(){ return Number(state.yHours)||0; }
   function baseSalary(){ return Number(state.salary)||0; }
   function loadedSalary(){ return baseSalary()*(1+(state.overheadSoc? SOC_RATE/100:0)); }
-  function hourlyRate(){ var denom = state.mode==='monthly'? monthlyHours(): state.mode==='yearly'? yearlyHours(): 1; var rate = denom>0? loadedSalary()/denom:0; return Math.round(rate); }
+  function hourlyRate(){
+    var denom = state.mode==='monthly'? monthlyHours(): state.mode==='yearly'? yearlyHours(): 1;
+    var rate = denom>0? loadedSalary()/denom:0;
+    return Math.round(rate);
+  }
   function costFor(h){ return Math.round(hourlyRate()*(Number(h)||0)); }
 
   function setSegment(){
@@ -225,21 +283,29 @@
     if(state.mode==='monthly' && bm) bm.classList.add('active');
     if(state.mode==='yearly' && by) by.classList.add('active');
     if(state.mode==='hourly' && bh) bh.classList.add('active');
-    var sl=el('salaryLabel'); if(sl) sl.textContent = state.mode==='monthly'? '月給（税引前）' : (state.mode==='yearly'? '年収（税引前）' : '時給（税引前）');
+    var sl=el('salaryLabel');
+    if(sl) sl.textContent = state.mode==='monthly'? '月給（税引前）' : (state.mode==='yearly'? '年収（税引前）' : '時給（税引前）');
   }
-  function syncSalaryRange(){ var r=el('salaryRange'); if(!r) return; if(state.mode==='monthly'){ r.min=100000; r.max=2000000; r.step=1000; } else if(state.mode==='yearly'){ r.min=1000000; r.max=30000000; r.step=10000; } else { r.min=800; r.max=10000; r.step=10; } r.value=String(baseSalary()); }
-  function syncUseHoursRange(){ var r=el('useHoursRange'); if(r){ r.min=0; r.max=12; r.step=0.25; r.value=String(state.useHours||0);} }
-  function updateVisibility(){ var mb=el('monthlyBlock'), yb=el('yearlyBlock'); if(state.mode==='monthly'){ if(mb) mb.style.display=''; if(yb) yb.style.display='none'; } else if(state.mode==='yearly'){ if(mb) mb.style.display='none'; if(yb) yb.style.display=''; } else { if(mb) mb.style.display='none'; if(yb) yb.style.display='none'; } }
 
-  function defaultSalaryFor(mode){ if(mode==='hourly') return 2000; if(mode==='yearly') return 3600000; return 300000; }
-  function resetSalaryForMode(){ state.salary = defaultSalaryFor(state.mode); syncSalaryRange(); var sr=el('salaryRange'); if(sr) sr.value=String(state.salary); formatMoneyToInput(state.salary); }
-  function defaultSalaryFor(mode){ if(mode==='hourly') return 2000; if(mode==='yearly') return 3600000; return 300000; }
-  function resetSalaryForMode(){ state.salary = defaultSalaryFor(state.mode); syncSalaryRange(); var sr=el('salaryRange'); if(sr) sr.value=String(state.salary); formatMoneyToInput(state.salary); }
+  function syncSalaryRange(){
+    var r=el('salaryRange'); if(!r) return;
+    if(state.mode==='monthly'){ r.min=100000; r.max=2000000; r.step=1000; }
+    else if(state.mode==='yearly'){ r.min=1000000; r.max=30000000; r.step=10000; }
+    else { r.min=800; r.max=10000; r.step=10; }
+    r.value=String(baseSalary());
+  }
+  function syncUseHoursRange(){
+    var r=el('useHoursRange'); if(r){ r.min=0; r.max=12; r.step=0.25; r.value=String(state.useHours||0); }
+  }
+  function updateVisibility(){
+    var mb=el('monthlyBlock'), yb=el('yearlyBlock');
+    if(state.mode==='monthly'){ if(mb) mb.style.display=''; if(yb) yb.style.display='none'; }
+    else if(state.mode==='yearly'){ if(mb) mb.style.display='none'; if(yb) yb.style.display=''; }
+    else { if(mb) mb.style.display='none'; if(yb) yb.style.display='none'; }
+  }
+
   function updateView(){
-    setSegment();
-    syncSalaryRange();
-    syncUseHoursRange();
-    updateVisibility();
+    setSegment(); syncSalaryRange(); syncUseHoursRange(); updateVisibility();
 
     var vhs=el('vhSalary'); if(vhs) vhs.textContent = fmtJPY(baseSalary());
     var vhO=el('vhOverheadSoc'); if(vhO) vhO.textContent = state.overheadSoc? ('あり（'+SOC_RATE+'%）') : 'なし';
@@ -262,16 +328,49 @@
     var bk=el('baseKind'); if(bk) bk.textContent = state.mode==='monthly'? '月給' : (state.mode==='yearly'? '年収' : '時給');
   }
 
-  function formatMoneyToInput(num){ var s=el('salary'); if(s) s.value=(Number(num)||0).toLocaleString('ja-JP'); }
-  function showToast(msg){ var t=document.createElement('div'); t.className='toast'; t.textContent=msg; document.body.appendChild(t); setTimeout(function(){ t.remove(); }, 1500); }
+  function formatMoneyToInput(num){
+    var s=el('salary'); if(!s) return;
+    try{ s.value=(Number(num)||0).toLocaleString('ja-JP'); }
+    catch(_){ s.value=String(Math.round(Number(num)||0)).replace(/\B(?=(\d{3})+(?!\d))/g,','); }
+  }
+  function showToast(msg){
+    var t=document.createElement('div'); t.className='toast'; t.textContent=msg; document.body.appendChild(t);
+    setTimeout(function(){ t.remove(); }, 1500);
+  }
 
-  function recalcMonthly(soft){ if(soft===undefined) soft=true; var d=Number(state.mDays); var hpd=parseFloat(state.mHoursPerDay); if(!isFinite(d)||isNaN(hpd)) return; if(!soft){ d=clamp(d,1,31); hpd=clamp(hpd,0.1,24); state.mDays=d; state.mHoursPerDay=hpd; var md=el('mDays'); if(md) md.value=String(d); var mhpd=el('mHoursPerDay'); if(mhpd) mhpd.value=String(hpd);} state.mHours=d*hpd; var mh=el('mHours'); if(mh) mh.value=String(state.mHours); }
-  function recalcYearly(soft){ if(soft===undefined) soft=true; var d=Number(state.yDays); var hpd=parseFloat(state.yHoursPerDay); if(!isFinite(d)||isNaN(hpd)) return; if(!soft){ d=clamp(d,1,366); hpd=clamp(hpd,0.1,24); state.yDays=d; state.yHoursPerDay=hpd; var yd=el('yDays'); if(yd) yd.value=String(d); var yhpd=el('yHoursPerDay'); if(yhpd) yhpd.value=String(hpd);} state.yHours=d*hpd; var yh=el('yHours'); if(yh) yh.value=String(state.yHours); }
+  function recalcMonthly(soft){
+    if(soft===undefined) soft=true;
+    var d=Number(state.mDays); var hpd=parseFloat(state.mHoursPerDay);
+    if(!isFinite(d)||isNaN(hpd)) return;
+    if(!soft){
+      d=clamp(d,1,31); hpd=clamp(hpd,0.1,24);
+      state.mDays=d; state.mHoursPerDay=hpd;
+      var md=el('mDays'); if(md) md.value=String(d);
+      var mhpd=el('mHoursPerDay'); if(mhpd) mhpd.value=String(hpd);
+    }
+    state.mHours=d*hpd;
+    var mh=el('mHours'); if(mh) mh.value=String(state.mHours);
+  }
+  function recalcYearly(soft){
+    if(soft===undefined) soft=true;
+    var d=Number(state.yDays); var hpd=parseFloat(state.yHoursPerDay);
+    if(!isFinite(d)||isNaN(hpd)) return;
+    if(!soft){
+      d=clamp(d,1,366); hpd=clamp(hpd,0.1,24);
+      state.yDays=d; state.yHoursPerDay=hpd;
+      var yd=el('yDays'); if(yd) yd.value=String(d);
+      var yhpd=el('yHoursPerDay'); if(yhpd) yhpd.value=String(hpd);
+    }
+    state.yHours=d*hpd;
+    var yh=el('yHours'); if(yh) yh.value=String(state.yHours);
+  }
 
   function copySummary(){
     var base = state.mode==='monthly'? '月給' : (state.mode==='yearly'? '年収' : '時給');
-    var workLine = state.mode==='monthly'? ('稼働時間：'+state.mHours.toLocaleString('ja-JP')+' 時間/月') : (state.mode==='yearly'? ('稼働時間：'+state.yHours.toLocaleString('ja-JP')+' 時間/年') : '稼働時間：—（時給ベース）');
-    var lines=[
+    var workLine = state.mode==='monthly'
+      ? ('稼働時間：'+state.mHours.toLocaleString('ja-JP')+' 時間/月')
+      : (state.mode==='yearly' ? ('稼働時間：'+state.yHours.toLocaleString('ja-JP')+' 時間/年') : '稼働時間：—（時給ベース）');
+    var txt = [
       '【時間単価・コスト可視化】',
       '給与ベース：'+base,
       '対象給与：'+fmtJPY(baseSalary()),
@@ -281,19 +380,27 @@
       '1分あたり：'+fmtJPY(Math.round(hourlyRate()/60)),
       '15分：'+fmtJPY(costFor(0.25))+' ／ 30分：'+fmtJPY(costFor(0.5))+' ／ 1時間：'+fmtJPY(costFor(1)),
       '(ver '+VERSION+')'
-    ];
-    var txt=lines.join('
-');
+    ].join('\n');
     try{
       if(navigator.clipboard && navigator.clipboard.writeText){
-        navigator.clipboard.writeText(txt).then(function(){ showToast('コピーしました'); }).catch(function(){ fallbackCopy(txt); });
-      } else { fallbackCopy(txt); }
+        navigator.clipboard.writeText(txt).then(function(){ showToast('コピーしました'); })
+          .catch(function(){ fallbackCopy(txt); });
+      }else{ fallbackCopy(txt); }
     }catch(_){ fallbackCopy(txt); }
   }
-  function fallbackCopy(txt){ var ta=document.createElement('textarea'); ta.value=txt; document.body.appendChild(ta); ta.select(); try{ document.execCommand('copy'); }catch(e){} ta.remove(); showToast('コピーしました'); }
+  function fallbackCopy(txt){
+    var ta=document.createElement('textarea'); ta.value=txt; document.body.appendChild(ta);
+    ta.select(); try{ document.execCommand('copy'); }catch(e){}
+    ta.remove(); showToast('コピーしました');
+  }
 
   function resetAll(){
-    state={ mode:'monthly', salary:300000, overheadSoc:false, mDays:20, mHoursPerDay:8, mHours:160, yDays:240, yHoursPerDay:8, yHours:1920, useHours:1 };
+    state={
+      mode:'monthly', salary:300000, overheadSoc:false,
+      mDays:20, mHoursPerDay:8, mHours:160,
+      yDays:240, yHoursPerDay:8, yHours:1920,
+      useHours:1
+    };
     formatMoneyToInput(state.salary);
     var ov=el('overheadSoc'); if(ov) ov.checked=false;
     var md=el('mDays'); if(md) md.value='20';
@@ -303,15 +410,21 @@
     var yhpd=el('yHoursPerDay'); if(yhpd) yhpd.value='8';
     var yh=el('yHours'); if(yh) yh.value='1920';
     var uh=el('useHours'); if(uh) uh.value='1.0';
-    syncUseHoursRange();
-    updateView();
-    save();
+    syncUseHoursRange(); syncSalaryRange(); updateView(); save();
     showToast('リセットしました');
     var ids=['err_mDays','err_mHoursPerDay','err_yDays','err_yHoursPerDay'];
     for(var i=0;i<ids.length;i++){ var e=el(ids[i]); if(e) e.style.display='none'; }
   }
 
-  // イベント
+  function defaultSalaryFor(mode){ if(mode==='hourly') return 2000; if(mode==='yearly') return 3600000; return 300000; }
+  function resetSalaryForMode(){
+    state.salary = defaultSalaryFor(state.mode);
+    syncSalaryRange();
+    var sr=el('salaryRange'); if(sr) sr.value=String(state.salary);
+    formatMoneyToInput(state.salary);
+  }
+
+  /* イベント */
   on('btnMonthly','click', function(){ state.mode='monthly'; resetSalaryForMode(); updateView(); save(); });
   on('btnYearly','click', function(){ state.mode='yearly'; resetSalaryForMode(); updateView(); save(); });
   on('btnHourly','click', function(){ state.mode='hourly'; resetSalaryForMode(); updateView(); save(); });
@@ -323,15 +436,31 @@
   on('overheadSoc','change', function(e){ state.overheadSoc=!!e.target.checked; updateView(); save(); });
 
   on('mDays','input', function(e){ var n=Number(e.target.value); if(isFinite(n)){ state.mDays=n; recalcMonthly(true); updateView(); save(); } });
-  on('mDays','blur', function(e){ var n=Number(e.target.value); if(!isFinite(n)) n=20; var raw=n; n=clamp(n,1,31); if(raw>31){ showErr('err_mDays','月の稼働日数の上限は31日です（入力値を補正しました）'); } state.mDays=n; e.target.value=String(n); recalcMonthly(false); updateView(); save(); });
+  on('mDays','blur', function(e){
+    var n=Number(e.target.value); if(!isFinite(n)) n=20; var raw=n; n=clamp(n,1,31);
+    if(raw>31){ showErr('err_mDays','月の稼働日数の上限は31日です（入力値を補正しました）'); }
+    state.mDays=n; e.target.value=String(n); recalcMonthly(false); updateView(); save();
+  });
   on('mHoursPerDay','input', function(e){ var v=e.target.value; if(v==='') return; var n=parseFloat(v); if(!isNaN(n)){ state.mHoursPerDay=n; recalcMonthly(true); updateView(); save(); } });
-  on('mHoursPerDay','blur', function(e){ var v=e.target.value.trim(); var n=parseFloat(v); if(isNaN(n)) n=8; var raw=n; n=clamp(n,0.1,24); if(raw>24){ showErr('err_mHoursPerDay','1日の労働時間の上限は24時間です（入力値を補正しました）'); } state.mHoursPerDay=n; e.target.value=String(n); recalcMonthly(false); updateView(); save(); });
+  on('mHoursPerDay','blur', function(e){
+    var v=e.target.value.trim(); var n=parseFloat(v); if(isNaN(n)) n=8; var raw=n; n=clamp(n,0.1,24);
+    if(raw>24){ showErr('err_mHoursPerDay','1日の労働時間の上限は24時間です（入力値を補正しました）'); }
+    state.mHoursPerDay=n; e.target.value=String(n); recalcMonthly(false); updateView(); save();
+  });
   on('mHours','input', function(e){ var n=Number(e.target.value); if(isFinite(n)){ state.mHours=n; updateView(); save(); } });
 
   on('yDays','input', function(e){ var n=Number(e.target.value); if(isFinite(n)){ state.yDays=n; recalcYearly(true); updateView(); save(); } });
-  on('yDays','blur', function(e){ var n=Number(e.target.value); if(!isFinite(n)) n=240; var raw=n; n=clamp(n,1,366); if(raw>366){ showErr('err_yDays','年間の稼働日数の上限は366日です（入力値を補正しました）'); } state.yDays=n; e.target.value=String(n); recalcYearly(false); updateView(); save(); });
+  on('yDays','blur', function(e){
+    var n=Number(e.target.value); if(!isFinite(n)) n=240; var raw=n; n=clamp(n,1,366);
+    if(raw>366){ showErr('err_yDays','年間の稼働日数の上限は366日です（入力値を補正しました）'); }
+    state.yDays=n; e.target.value=String(n); recalcYearly(false); updateView(); save();
+  });
   on('yHoursPerDay','input', function(e){ var v=e.target.value; if(v==='') return; var n=parseFloat(v); if(!isNaN(n)){ state.yHoursPerDay=n; recalcYearly(true); updateView(); save(); } });
-  on('yHoursPerDay','blur', function(e){ var v=e.target.value.trim(); var n=parseFloat(v); if(isNaN(n)) n=8; var raw=n; n=clamp(n,0.1,24); if(raw>24){ showErr('err_yHoursPerDay','1日の労働時間の上限は24時間です（入力値を補正しました）'); } state.yHoursPerDay=n; e.target.value=String(n); recalcYearly(false); updateView(); save(); });
+  on('yHoursPerDay','blur', function(e){
+    var v=e.target.value.trim(); var n=parseFloat(v); if(isNaN(n)) n=8; var raw=n; n=clamp(n,0.1,24);
+    if(raw>24){ showErr('err_yHoursPerDay','1日の労働時間の上限は24時間です（入力値を補正しました）'); }
+    state.yHoursPerDay=n; e.target.value=String(n); recalcYearly(false); updateView(); save();
+  });
   on('yHours','input', function(e){ var n=Number(e.target.value); if(isFinite(n)){ state.yHours=n; updateView(); save(); } });
 
   on('useHours','input', function(e){ var n=parseFloat(e.target.value); if(!isNaN(n)){ state.useHours=n; var r=el('useHoursRange'); if(r) r.value=String(state.useHours); updateView(); save(); } });
@@ -340,25 +469,42 @@
   on('copyBtn','click', copySummary);
   on('resetBtn','click', resetAll);
 
-  // メッセージ表示（エラー表示の共通化）
+  /* メッセージ表示 */
   var errTimers={};
   function showErr(id,msg){ var e=el(id); if(!e) return; e.textContent=msg; e.style.display='block'; clearTimeout(errTimers[id]); errTimers[id]=setTimeout(function(){ e.style.display='none'; }, 2600); }
 
-  // 永続化
-  var KEY='rate_tool_r23';
+  /* 永続化 */
+  var KEY='rate_tool_r24';
   function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
-  function load(){ try{ var s=JSON.parse(localStorage.getItem(KEY)||localStorage.getItem('rate_tool_r20')||localStorage.getItem('rate_tool_r19')||localStorage.getItem('rate_tool_r18')||localStorage.getItem('rate_tool_r17')||'null'); if(s){ state=s; } }catch(e){} }
+  function load(){
+    try{
+      var s=JSON.parse(
+        localStorage.getItem(KEY)||
+        localStorage.getItem('rate_tool_r23')||
+        localStorage.getItem('rate_tool_r22')||
+        localStorage.getItem('rate_tool_r21')||
+        localStorage.getItem('rate_tool_r20')||
+        localStorage.getItem('rate_tool_r19')||
+        localStorage.getItem('rate_tool_r18')||
+        localStorage.getItem('rate_tool_r17')||'null'
+      );
+      if(s){ state=s; }
+    }catch(e){}
+  }
 
   function init(){
     load();
     formatMoneyToInput(state.salary);
     var ov=el('overheadSoc'); if(ov) ov.checked=!!state.overheadSoc;
-    var md=el('mDays'); if(md) md.value=state.mDays; var mhpd=el('mHoursPerDay'); if(mhpd) mhpd.value=state.mHoursPerDay; var mh=el('mHours'); if(mh) mh.value=state.mHours;
-    var yd=el('yDays'); if(yd) yd.value=state.yDays; var yhpd=el('yHoursPerDay'); if(yhpd) yhpd.value=state.yHoursPerDay; var yh=el('yHours'); if(yh) yh.value=state.yHours;
-    var uh=el('useHours'); if(uh) uh.value=state.useHours; syncUseHoursRange();
-    syncSalaryRange();
-    updateVisibility();
-    updateView();
+    var md=el('mDays'); if(md) md.value=state.mDays;
+    var mhpd=el('mHoursPerDay'); if(mhpd) mhpd.value=state.mHoursPerDay;
+    var mh=el('mHours'); if(mh) mh.value=state.mHours;
+    var yd=el('yDays'); if(yd) yd.value=state.yDays;
+    var yhpd=el('yHoursPerDay'); if(yhpd) yhpd.value=state.yHoursPerDay;
+    var yh=el('yHours'); if(yh) yh.value=state.yHours;
+    var uh=el('useHours'); if(uh) uh.value=state.useHours;
+
+    syncUseHoursRange(); syncSalaryRange(); updateVisibility(); updateView();
 
     var year=(new Date()).getFullYear();
     var cr=el('creditText'); if(cr) cr.textContent='Copyright (c) '+year+' 税理士法人松本会計事務所 All Rights Reserved. / '+VERSION;

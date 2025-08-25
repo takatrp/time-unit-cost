@@ -94,6 +94,9 @@
       background:linear-gradient(180deg,var(--accent),var(--accent-strong)); border:none; color:#fff;
       border-radius:9px; cursor:pointer; font-weight:700;}
     .btn.secondary{background:#eef5f9; color:var(--accent-strong); border:1px solid var(--line);}
+    .btn.outline{background:#fff; color:var(--accent-strong); border:1px solid var(--accent-strong);}
+
+    .btns{display:flex; gap:6px; justify-content:flex-end;} /* 右寄せ */
 
     .footer{font-size:11px; color:#6b7280; padding:6px 10px 10px;}
     .grid-2{display:grid; grid-template-columns:1fr 1fr; gap:6px;}
@@ -104,6 +107,13 @@
     .err{ color:#b91c1c; font-size:11.5px; display:none; }
     .toast{ position:fixed; left:8px; right:8px; bottom:8px; background:#111; color:#fff;
       padding:8px 10px; border-radius:8px; opacity:0.95; font-size:12px; z-index:9999; text-align:center; }
+
+    /* 印刷用：A4想定の余白調整（必要最低限） */
+    @media print{
+      body{ background:#fff; }
+      .card{ box-shadow:none; }
+      .btns{ display:none; } /* ボタンは紙面では不要なら非表示。画面そのまま印刷したい場合はこの1行を削除してOK */
+    }
   </style>
 </head>
 <body>
@@ -222,9 +232,10 @@
               </div>
             </div>
 
-            <div>
+            <div class="btns">
               <button id="copyBtn" class="btn" title="結果をクリップボードにコピー">コピー</button>
               <button id="resetBtn" class="btn secondary">リセット</button>
+              <button id="printBtn" class="btn outline" title="画面全体を印刷">印刷</button>
             </div>
           </div>
         </div>
@@ -234,13 +245,13 @@
       </div>
     </div>
 
-    <div class="credit"><span id="creditText">Copyright (c) 2025 税理士法人松本会計事務所 All Rights Reserved. / r24</span></div>
+    <div class="credit"><span id="creditText">Copyright (c) 2025 税理士法人松本会計事務所 All Rights Reserved. / r25</span></div>
   </div>
 
 <script>
 (function(){
   'use strict';
-  var VERSION='r24';
+  var VERSION='r25';
   var SOC_RATE=16.0; // 標準的な事業主負担率（概算）
 
   function el(id){ return document.getElementById(id); }
@@ -468,18 +479,20 @@
 
   on('copyBtn','click', copySummary);
   on('resetBtn','click', resetAll);
+  on('printBtn','click', function(){ window.print(); });
 
   /* メッセージ表示 */
   var errTimers={};
   function showErr(id,msg){ var e=el(id); if(!e) return; e.textContent=msg; e.style.display='block'; clearTimeout(errTimers[id]); errTimers[id]=setTimeout(function(){ e.style.display='none'; }, 2600); }
 
   /* 永続化 */
-  var KEY='rate_tool_r24';
+  var KEY='rate_tool_r25';
   function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
   function load(){
     try{
       var s=JSON.parse(
         localStorage.getItem(KEY)||
+        localStorage.getItem('rate_tool_r24')||
         localStorage.getItem('rate_tool_r23')||
         localStorage.getItem('rate_tool_r22')||
         localStorage.getItem('rate_tool_r21')||

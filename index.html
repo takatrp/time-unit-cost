@@ -26,6 +26,7 @@
 
     header{display:flex; gap:8px; align-items:center; margin-bottom:6px;}
     .logo{height:48px; width:auto; object-fit:contain; border-radius:4px;}
+    .logo-link{display:inline-block; line-height:0;}
     h1{
       font-weight:700; letter-spacing:.3px; line-height:1.05; white-space:nowrap;
       overflow:hidden; text-overflow:ellipsis; flex:1; margin:0; font-size:20px;
@@ -127,8 +128,10 @@
 <body>
   <div class="container">
     <header>
-      <!-- 左上ロゴ（48px） -->
-      <img src="ロゴ.jpg" alt="松本会計ロゴ" class="logo" />
+      <!-- 左上ロゴ（48px）に公式サイトへのリンク -->
+      <a class="logo-link" href="https://www.matsumoto-kaikei.or.jp/" target="_blank" rel="noopener" aria-label="税理士法人松本会計事務所 公式サイト">
+        <img src="ロゴ.jpg" alt="松本会計ロゴ" class="logo" />
+      </a>
       <h1>人件費見える化ツール</h1>
     </header>
 
@@ -201,54 +204,54 @@
       <div class="card">
         <div class="section">
           <h2>結果</h2>
-          <div class="result">
-            <div class="tile">
-              <h3>時間単価（税込/ベース×上乗せ率）</h3>
-              <div class="main-figure" id="hourly">–</div>
-              <div class="permin">1分あたり：<b id="perMin">–</b></div>
-              <div class="help">社保上乗せ率（標準）：<b id="socRateLabel">–</b></div>
-            </div>
+        <div class="result">
+          <div class="tile">
+            <h3>時間単価（税込/ベース×上乗せ率）</h3>
+            <div class="main-figure" id="hourly">–</div>
+            <div class="permin">1分あたり：<b id="perMin">–</b></div>
+            <div class="help">社保上乗せ率（標準）：<b id="socRateLabel">–</b></div>
+          </div>
 
-            <div class="tile">
-              <h3>所要時間のコスト</h3>
-              <div class="figure-row">
-                <div class="main-figure" id="cost">–</div>
-                <div class="accent-chip" id="costTimes12">（×12＝—）</div>
-              </div>
-              <div class="help">15分：<b id="c15">–</b> ／ 30分：<b id="c30">–</b> ／ 1時間：<b id="c60">–</b></div>
+          <div class="tile">
+            <h3>所要時間のコスト</h3>
+            <div class="figure-row">
+              <div class="main-figure" id="cost">–</div>
+              <div class="accent-chip" id="costTimes12">（×12＝—）</div>
             </div>
+            <div class="help">15分：<b id="c15">–</b> ／ 30分：<b id="c30">–</b> ／ 1時間：<b id="c60">–</b></div>
+          </div>
 
-            <div class="tile">
-              <h3>前提（現在の設定）</h3>
-              <div class="grid-2">
-                <div>
-                  <div class="help">給与ベース</div>
-                  <div id="baseKind" style="font-weight:700">年収</div>
-                </div>
-                <div>
-                  <div class="help">社保上乗せ</div>
-                  <div id="vhOverheadSoc" style="font-weight:700">なし</div>
-                </div>
+          <div class="tile">
+            <h3>前提（現在の設定）</h3>
+            <div class="grid-2">
+              <div>
+                <div class="help">給与ベース</div>
+                <div id="baseKind" style="font-weight:700">年収</div>
               </div>
-              <div class="hr"></div>
-              <div class="grid-2">
-                <div>
-                  <div class="help">対象給与</div>
-                  <div id="vhSalary" style="font-weight:700">–</div>
-                </div>
-                <div>
-                  <div class="help">稼働時間（基準）</div>
-                  <div id="vhWorkH" style="font-weight:700">–</div>
-                </div>
+              <div>
+                <div class="help">社保上乗せ</div>
+                <div id="vhOverheadSoc" style="font-weight:700">なし</div>
               </div>
             </div>
-
-            <div class="btns">
-              <button id="copyBtn" class="btn" title="結果をクリップボードにコピー">コピー</button>
-              <button id="resetBtn" class="btn secondary">リセット</button>
-              <button id="printBtn" class="btn outline" title="画面全体を印刷">印刷</button>
+            <div class="hr"></div>
+            <div class="grid-2">
+              <div>
+                <div class="help">対象給与</div>
+                <div id="vhSalary" style="font-weight:700">–</div>
+              </div>
+              <div>
+                <div class="help">稼働時間（基準）</div>
+                <div id="vhWorkH" style="font-weight:700">–</div>
+              </div>
             </div>
           </div>
+
+          <div class="btns">
+            <button id="copyBtn" class="btn" title="結果をクリップボードにコピー">コピー</button>
+            <button id="resetBtn" class="btn secondary">リセット</button>
+            <button id="printBtn" class="btn outline" title="画面全体を印刷">印刷</button>
+          </div>
+        </div>
         </div>
         <div class="footer">
           <div class="note">※ このツールは、単純な換算法（時間単価＝給与÷稼働時間）に基づきます。労基法上の一般的な所定労働時間（1日8時間・週40時間）に合わせ、初期値を 8h×20日/月・8h×240日/年としてあります。また、社保上乗せは標準率を使用しており、実際の料率は保険者・業種・地域・年度等により異なります。</div>
@@ -259,14 +262,14 @@
     <div class="credit">
       Copyright (c) <span id="crYear"></span>
       <a href="https://www.matsumoto-kaikei.or.jp/" target="_blank" rel="noopener">税理士法人松本会計事務所</a>
-      All Rights Reserved. / <span id="crVer">r28</span>
+      All Rights Reserved. / <span id="crVer">r29</span>
     </div>
   </div>
 
 <script>
 (function(){
   'use strict';
-  var VERSION='r28';
+  var VERSION='r29';
   var SOC_RATE=16.0;
 
   function el(id){ return document.getElementById(id); }
@@ -513,12 +516,13 @@
   var errTimers={};
   function showErr(id,msg){ var e=el(id); if(!e) return; e.textContent=msg; e.style.display='block'; clearTimeout(errTimers[id]); errTimers[id]=setTimeout(function(){ e.style.display='none'; }, 2600); }
 
-  var KEY='rate_tool_r28';
+  var KEY='rate_tool_r29';
   function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
   function load(){
     try{
       var s=JSON.parse(
         localStorage.getItem(KEY)||
+        localStorage.getItem('rate_tool_r28')||
         localStorage.getItem('rate_tool_r27')||
         localStorage.getItem('rate_tool_r26')||
         localStorage.getItem('rate_tool_r25')||

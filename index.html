@@ -274,14 +274,14 @@
       <a href="https://www.matsumoto-kaikei.or.jp/" target="_blank" rel="noopener license">税理士法人松本会計事務所</a> ｜ 
       <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="license noopener">CC BY-NC-SA 4.0</a> ｜ 
       <a href="/tool-portal/terms.html" target="_blank" rel="noopener">利用条件</a> ｜ 
-      <span id="build-rev">r30</span>（<span id="last-updated-date"></span>）
+      <span id="build-rev">r31</span>（<span id="last-updated-date"></span>）
     </footer>
   </div>
 
 <script>
 (function(){
   'use strict';
-  var VERSION='r30';
+  var VERSION='r31';
   var SOC_RATE=16.0;
 
   function el(id){ return document.getElementById(id); }
@@ -515,15 +515,21 @@
   on('printBtn','click', function(){ window.print(); });
 
   var errTimers={};
-  function showErr(id,msg){ var e=el(id); if(!e) return; e.textContent=msg; e.style.display='block'; clearTimeout(errTimers[id]); errTimers[id]=setTimeout(function(){ e.style.display='none'); }, 2600); }
+  function showErr(id,msg){
+    var e=el(id); if(!e) return;
+    e.textContent=msg; e.style.display='block';
+    clearTimeout(errTimers[id]);
+    errTimers[id]=setTimeout(function(){ e.style.display='none'; }, 2600);
+  }
 
   // LocalStorage バージョン
-  var KEY='rate_tool_r30';
+  var KEY='rate_tool_r31';
   function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
   function load(){
     try{
       var s=JSON.parse(
         localStorage.getItem(KEY)||
+        localStorage.getItem('rate_tool_r30')||
         localStorage.getItem('rate_tool_r29')||
         localStorage.getItem('rate_tool_r28')||
         localStorage.getItem('rate_tool_r27')||
@@ -547,8 +553,10 @@
     var y = new Date().getFullYear();
     var cpy = el('cpy-year'); if(cpy) cpy.textContent = String(y);
 
-    var d; try{ d = new Date(document.lastModified); }catch(_){ d = new Date(); }
-    if(isNaN(d.getTime())) d = new Date();
+    var d;
+    try{ d = new Date(document.lastModified); }catch(_){ d = new Date(); }
+    if(!(d instanceof Date) || isNaN(d.getTime())) d = new Date();
+    // ローカルタイムに補正して YYYY-MM-DD
     var iso = new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);
     var lu = el('last-updated-date'); if(lu) lu.textContent = iso;
 

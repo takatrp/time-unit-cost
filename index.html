@@ -195,21 +195,22 @@
     .tour-btn{
       padding:6px 10px; border-radius:9px; border:1px solid var(--line); background:#f8fafc; color:#0f172a; font-weight:700; cursor:pointer; font-size:13px;
     }
-    /* 形式合わせ：主ボタンは「次へ」をprimary、完了は非強調 */
+    /* 主ボタンは「次へ」をprimary、完了は非強調 */
     .tour-btn.primary{ background:linear-gradient(180deg,var(--accent),var(--accent-strong)); color:#fff; border-color:transparent; }
     .tour-btn:focus-visible{ outline:3px solid var(--focus); outline-offset:2px; }
 
+    /* 強調表示（対象を前面＋明るい下地） */
     .tour-target{
       position:relative; z-index:10000 !important;
-      box-shadow:0 0 0 4px rgba(58,162,200,.25), 0 8px 28px rgba(0,0,0,.25) !important;
-      border-radius:10px;
+      box-shadow:0 0 0 6px rgba(58,162,200,.35), 0 8px 28px rgba(0,0,0,.35) !important;
+      border-radius:12px;
+      background:#ffffff !important;
     }
   </style>
 </head>
 <body>
   <div class="container">
     <header>
-      <!-- 左上ロゴ（48px）に公式サイトへのリンク -->
       <a class="logo-link" href="https://www.matsumoto-kaikei.or.jp/" target="_blank" rel="noopener" aria-label="税理士法人松本会計事務所 公式サイト">
         <img src="ロゴ.jpg" alt="松本会計ロゴ" class="logo" />
       </a>
@@ -297,14 +298,14 @@
         <div class="section">
           <h2>結果</h2>
           <div class="result">
-            <div class="tile">
+            <div class="tile" id="tileHourly">
               <h3>時間単価（税込/ベース×上乗せ率）</h3>
               <div class="main-figure" id="hourly" tabindex="0" aria-label="時間単価">–</div>
               <div class="permin">1分あたり：<b id="perMin" tabindex="0" aria-label="1分あたり単価">–</b></div>
               <div class="help">社保上乗せ率（標準）：<b id="socRateLabel">–</b></div>
             </div>
 
-            <div class="tile">
+            <div class="tile" id="tileCost">
               <h3>所要時間のコスト</h3>
               <div class="figure-row">
                 <div class="main-figure" id="cost" tabindex="0" aria-label="所要時間のコスト">–</div>
@@ -357,14 +358,14 @@
       <a href="https://www.matsumoto-kaikei.or.jp/" target="_blank" rel="noopener license">税理士法人松本会計事務所</a> ｜ 
       <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="license noopener">CC BY-NC-SA 4.0</a> ｜ 
       <a href="/tool-portal/terms.html" target="_blank" rel="noopener">利用条件</a> ｜ 
-      <span id="build-rev">r34</span>（<span id="last-updated-date"></span>）
+      <span id="build-rev">r35</span>（<span id="last-updated-date"></span>）
     </footer>
   </div>
 
 <script>
 (function(){
   'use strict';
-  var VERSION='r34';
+  var VERSION='r35';
   var SOC_RATE=16.0;
   var TUTORIAL_SEEN_KEY='rate_tool_tutorial_seen_v1';
   var initialized=false;
@@ -604,12 +605,13 @@
   }
 
   // LocalStorage バージョン
-  var KEY='rate_tool_r34';
+  var KEY='rate_tool_r35';
   function save(){ if(suspendSave) return; try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
   function load(){
     try{
       var s=JSON.parse(
         localStorage.getItem(KEY)||
+        localStorage.getItem('rate_tool_r34')||
         localStorage.getItem('rate_tool_r33')||
         localStorage.getItem('rate_tool_r32')||
         localStorage.getItem('rate_tool_r31')||
@@ -655,8 +657,9 @@
       { sel:'#overheadSoc', title:'3. 社保上乗せ', desc:'事業主負担の社会保険料を上乗せして、人件費の総額視点に切り替えます。' },
       { ensure:function(){ if(state.mode!=='yearly'){ state.mode='yearly'; setSegment(); updateVisibility(); updateView(); } }, sel:'#yearlyBlock', title:'4. 稼働時間（年収ベース）', desc:'年間の稼働日数・1日の労働時間から年間稼働時間が自動計算されます。' },
       { ensure:function(){ if(state.mode!=='monthly'){ state.mode='monthly'; setSegment(); updateVisibility(); updateView(); } }, sel:'#monthlyBlock', title:'5. 稼働時間（月給ベース）', desc:'月給の場合は月の稼働日数・1日の労働時間から月間稼働時間が算出されます。' },
+      /* 重要：以下3つはコンテナ全体を強調して視認性を確保 */
       { ensure:function(){ if(state.mode!=='yearly'){ state.mode='yearly'; setSegment(); updateVisibility(); updateView(); } }, sel:'#useHoursRange', title:'6. 所要時間の入力', desc:'実際に想定する作業時間（h）をスライダーで指定します。（0.25h=15分）' },
-      { sel:'.tile .main-figure#hourly', title:'7. 時間単価の確認', desc:'給与÷稼働時間に社保上乗せを反映した「時間単価」と、1分あたりの単価が表示されます。' },
+      { sel:'#hourly', title:'7. 時間単価の確認', desc:'給与÷稼働時間に社保上乗せを反映した「時間単価」と、1分あたりの単価が表示されます。' },
       { sel:'#cost', title:'8. 所要時間のコスト', desc:'入力した所要時間に応じたコストです。右側の（×12）は12倍の目安です。' },
       { sel:'.btns', title:'9. 共有・印刷・リセット', desc:'「コピー」で結果サマリをテキスト化、「印刷」で画面全体を出力、「リセット」で既定値に戻せます。' },
       { sel:'footer.mk-mini', title:'10. 利用条件とバージョン', desc:'フッターにライセンス（CC BY-NC-SA 4.0）、利用条件、バージョン（r番号）と最終更新日を表示します。' }
@@ -664,6 +667,35 @@
   };
 
   function qs(sel){ return document.querySelector(sel); }
+  function closestOf(el, selector){
+    if(!el) return null;
+    if(el.closest) return el.closest(selector);
+    // polyfill
+    var node = el;
+    while(node){
+      if(node.matches && node.matches(selector)) return node;
+      node = node.parentElement;
+    }
+    return null;
+  }
+  function resolveHighlightElement(rawEl){
+    var el = rawEl;
+    if(!el) return null;
+    // range は親の .slider-row を強調
+    if(el.tagName==='INPUT' && el.type==='range'){
+      var wrap = closestOf(el,'.slider-row');
+      if(wrap) el = wrap;
+    }
+    // 時間単価/コストはタイル全体を強調
+    if(el.id==='hourly'){
+      var t = closestOf(el,'#tileHourly'); if(t) el = t;
+    }
+    if(el.id==='cost' || el.id==='costTimes12' || el.id==='perMin'){
+      var t2 = closestOf(el,'#tileCost'); if(t2) el = t2;
+    }
+    return el;
+  }
+
   function createOverlay(){
     var o=document.createElement('div'); o.className='tour-overlay'; o.setAttribute('aria-hidden','true');
     var t=document.createElement('div'); t.className='tour-tip'; t.setAttribute('role','dialog'); t.setAttribute('aria-live','polite');
@@ -706,33 +738,52 @@
     else if(e.key==='ArrowLeft'){ prevStep(); }
     else if(e.key==='Escape'){ endTour(); }
   }
+  function clearHighlight(){
+    if(tour.targetEl){ tour.targetEl.classList.remove('tour-target'); tour.targetEl=null; }
+  }
   function highlightTarget(sel){
     clearHighlight();
-    var el = qs(sel);
+    var base = qs(sel);
+    var el = resolveHighlightElement(base);
     if(!el){ return null; }
     el.classList.add('tour-target');
     tour.targetEl = el;
     el.scrollIntoView({behavior:'smooth', block:'center', inline:'nearest'});
     return el;
   }
-  function clearHighlight(){
-    if(tour.targetEl){ tour.targetEl.classList.remove('tour-target'); tour.targetEl=null; }
-  }
+
   function positionTip(){
     if(!tour.tip || !tour.targetEl) return;
     var r = tour.targetEl.getBoundingClientRect();
     var tip = tour.tip;
     var pad = 10;
+
+    // デフォルト：下側
     var top = r.bottom + pad;
     var left = Math.max(8, Math.min(window.innerWidth - tip.offsetWidth - 8, r.left));
     tip.style.left = left + 'px';
     tip.style.top = top + 'px';
+
+    // ターゲットと重なる/下がはみ出す -> 上側へ
+    var overlap = !(top > r.bottom + pad || (top + tip.offsetHeight) < r.top - pad) &&
+                  !(left > r.right || (left + tip.offsetWidth) < r.left);
     var overflowBottom = top + tip.offsetHeight > window.innerHeight - 8;
-    if(overflowBottom){
+
+    if(overlap || overflowBottom){
       top = r.top - tip.offsetHeight - pad;
       tip.style.top = Math.max(8, top) + 'px';
+      // それでも重なる場合は右側へ配置
+      var overlap2 = !(top > r.bottom + pad || (top + tip.offsetHeight) < r.top - pad) &&
+                     !(left > r.right || (left + tip.offsetWidth) < r.left);
+      if(overlap2){
+        top = Math.max(8, r.top);
+        left = Math.min(window.innerWidth - tip.offsetWidth - 8, r.right + pad);
+        tip.style.top = top + 'px';
+        tip.style.left = left + 'px';
+      }
     }
   }
+
   function showStep(i){
     tour.idx = i;
     var step = tour.steps[i];
@@ -743,10 +794,10 @@
     title.textContent = step.title;
     desc.textContent  = step.desc;
 
-    // 最終ステップでも「次へ」を主ボタンのまま表示（完了は任意）
     var isLast = (i === tour.steps.length-1);
     var nextBtn = tour.tip.querySelector('#tourNext');
     nextBtn.textContent = isLast ? '次へ（終了）' : '次へ';
+
     setTimeout(positionTip, 50);
   }
   function nextStep(){
@@ -783,7 +834,7 @@
   }
 
   // ====== 初期化 ======
-  function initFooter(){ /* 上で定義済み */ }
+  function initFooter(){ /* 定義済み */ }
   function init(){
     if(initialized) return; initialized=true;
 

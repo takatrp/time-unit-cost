@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>人件費見える化ツール</title>
 
+<!-- Favicon -->
 <link rel="icon" href="favicon192192.png" sizes="192x192" />
 <link rel="shortcut icon" href="favicon192192.png" />
 <link rel="apple-touch-icon" href="favicon192192.png" />
@@ -271,22 +272,23 @@ input[type="range"]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 6px rgba(58
     </div>
   </div>
 
+  <!-- ミニフッター（CC BY-NC-SA 4.0 / 最終更新日 自動） -->
   <footer class="mk-mini">
     © <span id="cpy-year">2025</span>
     <a href="https://www.matsumoto-kaikei.or.jp/" target="_blank" rel="noopener license">税理士法人松本会計事務所</a> ｜ 
     <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="license noopener">CC BY-NC-SA 4.0</a> ｜ 
     <a href="/tool-portal/terms.html" target="_blank" rel="noopener">利用条件</a> ｜ 
-    <span id="build-rev">r36</span>（<span id="last-updated-date"></span>）
+    <span id="build-rev">r37</span>（<span id="last-updated-date"></span>）
   </footer>
 </div>
 
 <script>
 (function(){
   'use strict';
-  var VERSION='r36';
+  var VERSION='r37';
   var SOC_RATE=16.0;
   var TUTORIAL_SEEN_KEY='rate_tool_tutorial_seen_v1';
-  var KEY='rate_tool_r36';
+  var KEY='rate_tool_r37';
   var initialized=false;
 
   function el(id){return document.getElementById(id)}
@@ -294,6 +296,7 @@ input[type="range"]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 6px rgba(58
   function fmtJPY(n){try{return new Intl.NumberFormat('ja-JP',{style:'currency',currency:'JPY',maximumFractionDigits:0}).format(n)}catch(_){try{return '¥'+(Math.round(n)).toLocaleString('ja-JP')}catch(__){return '¥'+String(Math.round(n))}}}
   function clamp(v,min,max){v=Number(v);if(!isFinite(v))return v;if(v<min)return min;if(v>max)return max;return v}
 
+  // --- state ---
   var state={mode:'yearly',salary:4780000,overheadSoc:false,mDays:20,mHoursPerDay:8,mHours:160,yDays:240,yHoursPerDay:8,yHours:1920,useHours:1};
 
   function monthlyHours(){return Number(state.mHours)||0}
@@ -347,7 +350,7 @@ input[type="range"]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 6px rgba(58
     el('baseKind').textContent=state.mode==='monthly'?'月給':state.mode==='yearly'?'年収':'時給';
   }
 
-  /* money input with commas */
+  // money input with commas
   function liveFormatSalary(){
     var input=el('salary');var raw=input.value;var cleaned=raw.replace(/[^\d]/g,'');
     if(cleaned===''){state.salary=0;input.value='';el('salaryRange').value='0';updateView();save();return}
@@ -368,7 +371,17 @@ input[type="range"]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 6px rgba(58
     var base=state.mode==='monthly'?'月給':state.mode==='yearly'?'年収':'時給';
     var work=state.mode==='monthly'?('稼働時間：'+state.mHours.toLocaleString('ja-JP')+' 時間/月'):
              state.mode==='yearly'?('稼働時間：'+state.yHours.toLocaleString('ja-JP')+' 時間/年'):'稼働時間：—（時給ベース）';
-    var txt=['【時間単価・コスト可視化】','給与ベース：'+base,'対象給与：'+fmtJPY(baseSalary()),'社保上乗せ：'+(state.overheadSoc?('あり（'+SOC_RATE+'%）'):'なし'),work,'時間単価：'+fmtJPY(hourlyRate())+' /h','1分あたり：'+fmtJPY(Math.round(hourlyRate()/60)),'15分：'+fmtJPY(costFor(0.25))+' ／ 30分：'+fmtJPY(costFor(0.5))+' ／ 1時間：'+fmtJPY(costFor(1)),'(ver '+VERSION+')'].join('\n');
+    var txt=[
+      '【時間単価・コスト可視化】',
+      '給与ベース：'+base,
+      '対象給与：'+fmtJPY(baseSalary()),
+      '社保上乗せ：'+(state.overheadSoc?('あり（'+SOC_RATE+'%）'):'なし'),
+      work,
+      '時間単価：'+fmtJPY(hourlyRate())+' /h',
+      '1分あたり：'+fmtJPY(Math.round(hourlyRate()/60)),
+      '15分：'+fmtJPY(costFor(0.25))+' ／ 30分：'+fmtJPY(costFor(0.5))+' ／ 1時間：'+fmtJPY(costFor(1)),
+      '(ver '+VERSION+')'
+    ].join('\n');
     if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(function(){showToast('コピーしました')}).catch(function(){fallbackCopy(txt)})}else{fallbackCopy(txt)}
   }
   function fallbackCopy(txt){var ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();try{document.execCommand('copy')}catch(e){}ta.remove();showToast('コピーしました')}
@@ -412,15 +425,15 @@ input[type="range"]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 6px rgba(58
   var errTimers={}; function showErr(id,msg){var e=el(id);if(!e)return;e.textContent=msg;e.style.display='block';clearTimeout(errTimers[id]);errTimers[id]=setTimeout(function(){e.style.display='none'},2600)}
 
   function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}}
-  function load(){try{var s=JSON.parse(localStorage.getItem(KEY)||localStorage.getItem('rate_tool_r35')||'null');if(s)state=s}catch(e){}}
+  function load(){try{var s=JSON.parse(localStorage.getItem(KEY)||localStorage.getItem('rate_tool_r36')||localStorage.getItem('rate_tool_r35')||'null');if(s)state=s}catch(e){}}
 
   function initFooter(){
-    var y=new Date().getFullYear();var cpy=el('cpy-year');if(cpy)cpy.textContent=String(y);
+    var y=new Date().getFullYear();var cpy=document.getElementById('cpy-year');if(cpy)cpy.textContent=String(y);
     var d;try{d=new Date(document.lastModified)}catch(_){d=new Date()}
     if(!(d instanceof Date)||isNaN(d.getTime()))d=new Date();
     var iso=new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);
-    var lu=el('last-updated-date');if(lu)lu.textContent=iso;
-    var br=el('build-rev');if(br)br.textContent=VERSION;
+    var lu=document.getElementById('last-updated-date');if(lu)lu.textContent=iso;
+    var br=document.getElementById('build-rev');if(br)br.textContent=VERSION;
   }
 
   /* ===== Tutorial ===== */
@@ -432,7 +445,7 @@ input[type="range"]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 6px rgba(58
     {ensure:function(){if(state.mode!=='monthly'){state.mode='monthly';setSegment();updateVisibility();updateView();}},sel:'#monthlyBlock',title:'5. 稼働時間（月給ベース）',desc:'月給の場合は月の稼働日数・1日の労働時間から月間稼働時間が算出されます。'},
     {ensure:function(){if(state.mode!=='yearly'){state.mode='yearly';setSegment();updateVisibility();updateView();}},sel:'#useHoursRange',title:'6. 所要時間の入力',desc:'想定する作業時間（h）をスライダーで指定します。（0.25h=15分）'},
     {sel:'#hourly',title:'7. 時間単価の確認',desc:'給与÷稼働時間に社保上乗せを反映した「時間単価」と、1分あたりの単価が表示されます。'},
-    {sel:'#cost',title:'8. 所要時間のコスト',desc:'入力した所要時間に応じたコストです。右側の（×12）は12倍の目安です。'},
+    {sel:'#cost',title:'8. 所要時間のコスト',desc:'そのコストが月間のコストの場合、右側の（×12）は年間コストに相当します。'},
     {sel:'.btns',title:'9. 共有・印刷・リセット',desc:'「コピー」で結果サマリをテキスト化、「印刷」で画面全体を出力、「リセット」で既定値に戻せます。'},
     {sel:'footer.mk-mini',title:'10. 利用条件とバージョン',desc:'フッターにライセンス（CC BY-NC-SA 4.0）、利用条件、バージョン（r番号）と最終更新日を表示します。'}
   ]};
@@ -509,7 +522,7 @@ input[type="range"]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 6px rgba(58
     clearHighlight(); destroyOverlay(); save(); try{localStorage.setItem(TUTORIAL_SEEN_KEY,'1')}catch(e){}
   }
 
-  function load(){try{var s=JSON.parse(localStorage.getItem(KEY)||localStorage.getItem('rate_tool_r35')||'null');if(s)state=s}catch(e){}}
+  function load(){try{var s=JSON.parse(localStorage.getItem(KEY)||localStorage.getItem('rate_tool_r36')||localStorage.getItem('rate_tool_r35')||'null');if(s)state=s}catch(e){}}
   function init(){
     if(initialized)return; initialized=true;
     load();
@@ -519,15 +532,7 @@ input[type="range"]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 6px rgba(58
     el('yDays').value=state.yDays; el('yHoursPerDay').value=state.yHoursPerDay; el('yHours').value=state.yHours;
     el('useHours').value=state.useHours;
     syncUseHoursRange(); syncSalaryRange(); updateVisibility(); updateView();
-    // footer
-    (function initFooter(){
-      var y=new Date().getFullYear(); var c=el('cpy-year'); if(c)c.textContent=String(y);
-      var d;try{d=new Date(document.lastModified)}catch(_){d=new Date()}
-      if(!(d instanceof Date)||isNaN(d.getTime()))d=new Date();
-      var iso=new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);
-      var lu=el('last-updated-date'); if(lu) lu.textContent=iso;
-      var br=el('build-rev'); if(br) br.textContent=VERSION;
-    })();
+    initFooter();
 
     on('helpBtn','click',function(){startTour()});
     var banner=el('tourBanner'); var seen=false; try{seen=!!localStorage.getItem(TUTORIAL_SEEN_KEY)}catch(e){}

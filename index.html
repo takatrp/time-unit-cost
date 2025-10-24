@@ -296,7 +296,7 @@ input[type="range"]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 6px rgba(58
   function fmtJPY(n){try{return new Intl.NumberFormat('ja-JP',{style:'currency',currency:'JPY',maximumFractionDigits:0}).format(n)}catch(_){try{return '¥'+(Math.round(n)).toLocaleString('ja-JP')}catch(__){return '¥'+String(Math.round(n))}}}
   function clamp(v,min,max){v=Number(v);if(!isFinite(v))return v;if(v<min)return min;if(v>max)return max;return v}
 
-  // --- state ---
+  // state
   var state={mode:'yearly',salary:4780000,overheadSoc:false,mDays:20,mHoursPerDay:8,mHours:160,yDays:240,yHoursPerDay:8,yHours:1920,useHours:1};
 
   function monthlyHours(){return Number(state.mHours)||0}
@@ -350,7 +350,7 @@ input[type="range"]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 6px rgba(58
     el('baseKind').textContent=state.mode==='monthly'?'月給':state.mode==='yearly'?'年収':'時給';
   }
 
-  // money input with commas
+  // comma formatting
   function liveFormatSalary(){
     var input=el('salary');var raw=input.value;var cleaned=raw.replace(/[^\d]/g,'');
     if(cleaned===''){state.salary=0;input.value='';el('salaryRange').value='0';updateView();save();return}
@@ -445,7 +445,7 @@ input[type="range"]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 6px rgba(58
     {ensure:function(){if(state.mode!=='monthly'){state.mode='monthly';setSegment();updateVisibility();updateView();}},sel:'#monthlyBlock',title:'5. 稼働時間（月給ベース）',desc:'月給の場合は月の稼働日数・1日の労働時間から月間稼働時間が算出されます。'},
     {ensure:function(){if(state.mode!=='yearly'){state.mode='yearly';setSegment();updateVisibility();updateView();}},sel:'#useHoursRange',title:'6. 所要時間の入力',desc:'想定する作業時間（h）をスライダーで指定します。（0.25h=15分）'},
     {sel:'#hourly',title:'7. 時間単価の確認',desc:'給与÷稼働時間に社保上乗せを反映した「時間単価」と、1分あたりの単価が表示されます。'},
-    {sel:'#cost',title:'8. 所要時間のコスト',desc:'そのコストが月間のコストの場合、右側の（×12）は年間コストに相当します。'},
+    {sel:'#cost',title:'8. 所要時間のコスト',desc:'入力した所要時間に応じたコストです。そのコストが月間のコストの場合、右側の（×12）は年間コストに相当します。'},
     {sel:'.btns',title:'9. 共有・印刷・リセット',desc:'「コピー」で結果サマリをテキスト化、「印刷」で画面全体を出力、「リセット」で既定値に戻せます。'},
     {sel:'footer.mk-mini',title:'10. 利用条件とバージョン',desc:'フッターにライセンス（CC BY-NC-SA 4.0）、利用条件、バージョン（r番号）と最終更新日を表示します。'}
   ]};

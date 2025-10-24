@@ -14,6 +14,7 @@
     :root{
       --bg:#f5f8fb; --card:#ffffff; --ink:#1f2937; --muted:#6b7280;
       --accent:#3aa2c8; --accent-strong:#2384a8; --line:#e7eef3;
+      --overlay: rgba(15,23,42,.55);
     }
     *{box-sizing:border-box}
     html,body{height:100%}
@@ -33,6 +34,13 @@
     }
     @media (orientation:portrait){
       h1{ font-size:clamp(18px,5.6vw,22px); }
+    }
+
+    .header-actions{display:flex; gap:6px; align-items:center;}
+    .help-btn{
+      display:inline-flex; align-items:center; gap:6px;
+      padding:6px 9px; border-radius:9px; border:1px solid var(--line);
+      background:#f3f7fb; color:#0f172a; cursor:pointer; font-weight:700; font-size:13.5px;
     }
 
     .grid{display:grid; grid-template-columns:1fr; gap:10px;}
@@ -131,6 +139,40 @@
       .card{ box-shadow:none; }
       .btns{ display:none; }
       .mk-mini{ border-top:none; }
+      #tourBanner, .tour-overlay, .tour-tip{ display:none !important; }
+    }
+
+    /* === チュートリアル（オンボーディング） === */
+    #tourBanner{
+      display:none; margin:6px 0 10px 0; padding:8px 10px; border:1px solid var(--line);
+      background:#f0f7fb; border-radius:10px; font-size:13px; color:#0f172a;
+      align-items:center; justify-content:space-between; gap:8px;
+    }
+    #tourBanner .actions{ display:flex; gap:8px; }
+    #tourBanner button{ padding:6px 9px; border-radius:8px; border:1px solid var(--accent-strong); background:#fff; color:var(--accent-strong); font-weight:700; cursor:pointer; }
+    #tourBanner .skip{ border-color:var(--line); color:#334155; }
+
+    .tour-overlay{
+      position:fixed; inset:0; background:var(--overlay); z-index:9998;
+    }
+    .tour-tip{
+      position:fixed; max-width:420px; background:#fff; color:#0f172a; border-radius:12px;
+      border:1px solid #e2e8f0; box-shadow:0 10px 30px rgba(0,0,0,.18);
+      z-index:9999; padding:12px 12px 10px 12px;
+    }
+    .tour-tip h4{ margin:0 0 6px 0; font-size:15px; }
+    .tour-tip p{ margin:0 0 10px 0; font-size:13px; color:#334155; line-height:1.5; }
+    .tour-ctrl{ display:flex; justify-content:space-between; align-items:center; gap:8px; }
+    .tour-ctrl .left{ display:flex; gap:6px; }
+    .tour-ctrl .right{ display:flex; gap:6px; }
+    .tour-btn{
+      padding:6px 10px; border-radius:9px; border:1px solid var(--line); background:#f8fafc; color:#0f172a; font-weight:700; cursor:pointer; font-size:13px;
+    }
+    .tour-btn.primary{ background:linear-gradient(180deg,var(--accent),var(--accent-strong)); color:#fff; border-color:transparent; }
+    .tour-target{
+      position:relative; z-index:10000 !important; /* 上に出す */
+      box-shadow:0 0 0 4px rgba(58,162,200,.25), 0 8px 28px rgba(0,0,0,.25) !important;
+      border-radius:10px;
     }
   </style>
 </head>
@@ -142,7 +184,19 @@
         <img src="ロゴ.jpg" alt="松本会計ロゴ" class="logo" />
       </a>
       <h1>人件費見える化ツール</h1>
+      <div class="header-actions">
+        <button id="helpBtn" class="help-btn" aria-haspopup="dialog" aria-controls="tour">❓ チュートリアル</button>
+      </div>
     </header>
+
+    <!-- 初回オンボーディングバナー -->
+    <div id="tourBanner" role="region" aria-label="初回ガイド">
+      <div>はじめての方へ：このツールの使い方を <b>2分</b> でご案内します。</div>
+      <div class="actions">
+        <button id="startTourBtn">チュートリアルを開始</button>
+        <button id="skipTourBtn" class="skip">今回はスキップ</button>
+      </div>
+    </div>
 
     <div class="grid">
       <!-- 入力 -->
@@ -163,7 +217,6 @@
             <div class="label"><span id="salaryLabel">年収（税引前）</span></div>
             <div class="slider-row">
               <input id="salary" type="text" inputmode="numeric" placeholder="例：4,780,000" value="4,780,000" />
-              <!-- 年収プリセットに合わせた初期属性（JSで上書きもされます） -->
               <input id="salaryRange" type="range" min="1000000" max="30000000" step="10000" />
             </div>
           </div>
@@ -274,32 +327,33 @@
       <a href="https://www.matsumoto-kaikei.or.jp/" target="_blank" rel="noopener license">税理士法人松本会計事務所</a> ｜ 
       <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="license noopener">CC BY-NC-SA 4.0</a> ｜ 
       <a href="/tool-portal/terms.html" target="_blank" rel="noopener">利用条件</a> ｜ 
-      <span id="build-rev">r31</span>（<span id="last-updated-date"></span>）
+      <span id="build-rev">r32</span>（<span id="last-updated-date"></span>）
     </footer>
   </div>
 
 <script>
 (function(){
   'use strict';
-  var VERSION='r31';
+  var VERSION='r32';
   var SOC_RATE=16.0;
+  var TUTORIAL_SEEN_KEY='rate_tool_tutorial_seen_v1';
 
   function el(id){ return document.getElementById(id); }
   function on(id,ev,fn){ var e=el(id); if(e){ if(e.addEventListener){ e.addEventListener(ev,fn,false);} else if(e.attachEvent){ e.attachEvent('on'+ev,fn);} } }
-
   function fmtJPY(n){
     try{ return new Intl.NumberFormat('ja-JP',{style:'currency',currency:'JPY',maximumFractionDigits:0}).format(n); }
     catch(_){ try{ return '¥'+(Math.round(n)).toLocaleString('ja-JP'); }catch(__){ return '¥'+String(Math.round(n)); } }
   }
   function clamp(v,min,max){ v=Number(v); if(!isFinite(v)) return v; if(v<min) return min; if(v>max) return max; return v; }
 
-  // デフォルト：年収 4,780,000
+  // ====== アプリ状態 ======
   var state={
     mode:'yearly', salary:4780000, overheadSoc:false,
     mDays:20, mHoursPerDay:8, mHours:160,
     yDays:240, yHoursPerDay:8, yHours:1920,
     useHours:1
   };
+  var suspendSave=false;
 
   function monthlyHours(){ return Number(state.mHours)||0; }
   function yearlyHours(){ return Number(state.yHours)||0; }
@@ -320,7 +374,6 @@
     if(state.mode==='hourly' && bh) bh.classList.add('active');
     var sl=el('salaryLabel'); if(sl) sl.textContent = state.mode==='monthly'? '月給（税引前）' : (state.mode==='yearly'? '年収（税引前）' : '時給（税引前）');
   }
-
   function syncSalaryRange(){
     var r=el('salaryRange'); if(!r) return;
     if(state.mode==='monthly'){ r.min=100000; r.max=2000000; r.step=1000; }
@@ -337,7 +390,6 @@
     else if(state.mode==='yearly'){ if(mb) mb.style.display='none'; if(yb) yb.style.display=''; }
     else { if(mb) mb.style.display='none'; if(yb) yb.style.display='none'; }
   }
-
   function updateView(){
     setSegment(); syncSalaryRange(); syncUseHoursRange(); updateVisibility();
 
@@ -362,7 +414,7 @@
     var bk=el('baseKind'); if(bk) bk.textContent = state.mode==='monthly'? '月給' : (state.mode==='yearly'? '年収' : '時給');
   }
 
-  // リアルタイム3桁区切り（給与欄）
+  // ====== 入力フォーマット ======
   function liveFormatSalary(){
     var input = el('salary'); if(!input) return;
     var raw = input.value;
@@ -441,7 +493,6 @@
     ta.remove(); showToast('コピーしました');
   }
 
-  // リセットも「年収 4,780,000」を既定に
   function resetAll(){
     state={ mode:'yearly', salary:4780000, overheadSoc:false,
       mDays:20, mHoursPerDay:8, mHours:160, yDays:240, yHoursPerDay:8, yHours:1920, useHours:1 };
@@ -458,7 +509,6 @@
     showToast('リセットしました');
     ['err_mDays','err_mHoursPerDay','err_yDays','err_yHoursPerDay'].forEach(function(id){ var e=el(id); if(e) e.style.display='none'; });
   }
-
   function defaultSalaryFor(mode){ if(mode==='hourly') return 2000; if(mode==='yearly') return 4780000; return 300000; }
   function resetSalaryForMode(){
     state.salary = defaultSalaryFor(state.mode);
@@ -466,7 +516,7 @@
     syncSalaryRange(); var sr=el('salaryRange'); if(sr) sr.value=String(state.salary);
   }
 
-  /* イベント */
+  // ====== イベント束ね ======
   on('btnMonthly','click', function(){ state.mode='monthly'; resetSalaryForMode(); updateView(); save(); });
   on('btnYearly','click', function(){ state.mode='yearly'; resetSalaryForMode(); updateView(); save(); });
   on('btnHourly','click', function(){ state.mode='hourly'; resetSalaryForMode(); updateView(); save(); });
@@ -523,12 +573,13 @@
   }
 
   // LocalStorage バージョン
-  var KEY='rate_tool_r31';
-  function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
+  var KEY='rate_tool_r32';
+  function save(){ if(suspendSave) return; try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
   function load(){
     try{
       var s=JSON.parse(
         localStorage.getItem(KEY)||
+        localStorage.getItem('rate_tool_r31')||
         localStorage.getItem('rate_tool_r30')||
         localStorage.getItem('rate_tool_r29')||
         localStorage.getItem('rate_tool_r28')||
@@ -553,20 +604,189 @@
     var y = new Date().getFullYear();
     var cpy = el('cpy-year'); if(cpy) cpy.textContent = String(y);
 
-    var d;
-    try{ d = new Date(document.lastModified); }catch(_){ d = new Date(); }
+    var d; try{ d = new Date(document.lastModified); }catch(_){ d = new Date(); }
     if(!(d instanceof Date) || isNaN(d.getTime())) d = new Date();
-    // ローカルタイムに補正して YYYY-MM-DD
     var iso = new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);
     var lu = el('last-updated-date'); if(lu) lu.textContent = iso;
 
     var br = el('build-rev'); if(br) br.textContent = VERSION;
   }
 
+  // ====== チュートリアル実装 ======
+  var tour = {
+    running:false, idx:0, overlay:null, tip:null, targetEl:null,
+    snapshot:null,
+    steps:[
+      {
+        sel:'.seg', title:'1. 給与の単位を選ぶ',
+        desc:'「時給・月給・年収」から計算の前提を選択します。選択すると入力欄が切り替わります。'
+      },
+      {
+        sel:'#salary', title:'2. ベース金額の入力',
+        desc:'金額はカンマ付きで入力できます。下のスライダーでも調整できます。'
+      },
+      {
+        sel:'#overheadSoc', title:'3. 社保上乗せ',
+        desc:'事業主負担の社会保険料を上乗せして、人件費の総額視点に切り替えます。'
+      },
+      {
+        ensure:function(){ if(state.mode!=='yearly'){ state.mode='yearly'; setSegment(); updateVisibility(); updateView(); } },
+        sel:'#yearlyBlock', title:'4. 稼働時間（年収ベース）',
+        desc:'年間の稼働日数・1日の労働時間から年間稼働時間が自動計算されます。'
+      },
+      {
+        ensure:function(){ if(state.mode!=='monthly'){ state.mode='monthly'; setSegment(); updateVisibility(); updateView(); } },
+        sel:'#monthlyBlock', title:'5. 稼働時間（月給ベース）',
+        desc:'月給の場合は月の稼働日数・1日の労働時間から月間稼働時間が算出されます。'
+      },
+      {
+        ensure:function(){ if(state.mode!=='yearly'){ state.mode='yearly'; setSegment(); updateVisibility(); updateView(); } },
+        sel:'#useHoursRange', title:'6. 所要時間の入力',
+        desc:'実際に想定する作業時間（h）をスライダーで指定します。（0.25h=15分）'
+      },
+      {
+        sel:'.tile .main-figure#hourly', title:'7. 時間単価の確認',
+        desc:'給与÷稼働時間に社保上乗せを反映した「時間単価」と、1分あたりの単価が表示されます。'
+      },
+      {
+        sel:'#cost', title:'8. 所要時間のコスト',
+        desc:'入力した所要時間に応じたコストです。右側の（×12）は月次なら年換算、年次なら12倍の目安です。'
+      },
+      {
+        sel:'.btns', title:'9. 共有・印刷・リセット',
+        desc:'「コピー」で結果サマリをテキスト化、「印刷」で画面全体を出力、「リセット」で既定値に戻せます。'
+      },
+      {
+        sel:'footer.mk-mini', title:'10. 利用条件とバージョン',
+        desc:'フッターにライセンス（CC BY-NC-SA 4.0）、利用条件、バージョン（r番号）と最終更新日を表示します。'
+      }
+    ]
+  };
+
+  function qs(sel){ return document.querySelector(sel); }
+  function createOverlay(){
+    var o=document.createElement('div'); o.className='tour-overlay'; o.setAttribute('aria-hidden','true');
+    var t=document.createElement('div'); t.className='tour-tip'; t.setAttribute('role','dialog'); t.setAttribute('aria-live','polite');
+    t.innerHTML=[
+      '<h4 id="tourTitle"></h4>',
+      '<p id="tourDesc"></p>',
+      '<div class="tour-ctrl">',
+      '  <div class="left">',
+      '    <button class="tour-btn" id="tourPrev" aria-label="前へ">前へ</button>',
+      '    <button class="tour-btn" id="tourNext" aria-label="次へ">次へ</button>',
+      '  </div>',
+      '  <div class="right">',
+      '    <button class="tour-btn" id="tourSkip">スキップ</button>',
+      '    <button class="tour-btn primary" id="tourDone">完了</button>',
+      '  </div>',
+      '</div>'
+    ].join('');
+    document.body.appendChild(o); document.body.appendChild(t);
+    tour.overlay=o; tour.tip=t;
+
+    t.querySelector('#tourPrev').addEventListener('click', prevStep);
+    t.querySelector('#tourNext').addEventListener('click', nextStep);
+    t.querySelector('#tourSkip').addEventListener('click', endTour);
+    t.querySelector('#tourDone').addEventListener('click', endTour);
+
+    window.addEventListener('resize', positionTip, {passive:true});
+    window.addEventListener('scroll', positionTip, {passive:true});
+    document.addEventListener('keydown', onTourKeydown);
+  }
+  function destroyOverlay(){
+    if(tour.tip){ tour.tip.remove(); tour.tip=null; }
+    if(tour.overlay){ tour.overlay.remove(); tour.overlay=null; }
+    window.removeEventListener('resize', positionTip);
+    window.removeEventListener('scroll', positionTip);
+    document.removeEventListener('keydown', onTourKeydown);
+  }
+  function onTourKeydown(e){
+    if(!tour.running) return;
+    if(e.key==='ArrowRight'){ nextStep(); }
+    else if(e.key==='ArrowLeft'){ prevStep(); }
+    else if(e.key==='Escape'){ endTour(); }
+  }
+  function highlightTarget(sel){
+    clearHighlight();
+    var el = qs(sel);
+    if(!el){ return null; }
+    el.classList.add('tour-target');
+    tour.targetEl = el;
+    el.scrollIntoView({behavior:'smooth', block:'center', inline:'nearest'});
+    return el;
+  }
+  function clearHighlight(){
+    if(tour.targetEl){ tour.targetEl.classList.remove('tour-target'); tour.targetEl=null; }
+  }
+  function positionTip(){
+    if(!tour.tip || !tour.targetEl) return;
+    var r = tour.targetEl.getBoundingClientRect();
+    var tip = tour.tip;
+    var pad = 10;
+    // デフォルトはターゲットの下に配置（はみ出す場合は上に）
+    var top = r.bottom + pad;
+    var left = Math.max(8, Math.min(window.innerWidth - tip.offsetWidth - 8, r.left));
+    tip.style.left = left + 'px';
+    tip.style.top = top + 'px';
+    // 下に置けない場合は上側へ
+    var overflowBottom = top + tip.offsetHeight > window.innerHeight - 8;
+    if(overflowBottom){
+      top = r.top - tip.offsetHeight - pad;
+      tip.style.top = Math.max(8, top) + 'px';
+    }
+  }
+  function showStep(i){
+    tour.idx = i;
+    var step = tour.steps[i];
+    if(step.ensure) { step.ensure(); } // 表示の前提を整える（モード切替など）
+    var target = highlightTarget(step.sel);
+    var title = tour.tip.querySelector('#tourTitle');
+    var desc  = tour.tip.querySelector('#tourDesc');
+    title.textContent = step.title;
+    desc.textContent  = step.desc;
+    setTimeout(positionTip, 50);
+  }
+  function nextStep(){
+    if(tour.idx < tour.steps.length-1){ showStep(tour.idx+1); }
+    else { endTour(); }
+  }
+  function prevStep(){
+    if(tour.idx > 0){ showStep(tour.idx-1); }
+  }
+  function startTour(){
+    if(tour.running) return;
+    // スナップショット＆保存抑止
+    tour.snapshot = JSON.parse(JSON.stringify(state));
+    suspendSave = true;
+
+    tour.running = true;
+    if(!tour.overlay){ createOverlay(); }
+    tour.overlay.style.display='block'; tour.tip.style.display='block';
+    showStep(0);
+  }
+  function endTour(){
+    if(!tour.running) return;
+    tour.running=false;
+
+    // 状態復元＆保存再開
+    if(tour.snapshot){
+      state = tour.snapshot;
+      tour.snapshot = null;
+      updateVisibility(); setSegment(); syncSalaryRange(); syncUseHoursRange(); updateView();
+    }
+    suspendSave = false; save();
+
+    clearHighlight();
+    destroyOverlay();
+    try{ localStorage.setItem(TUTORIAL_SEEN_KEY,'1'); }catch(e){}
+  }
+
+  // ====== 初期化 ======
+  function initFooter(){ /* 上で定義済み */ }
   function init(){
     load();
 
-    // 入力系初期表示
+    // 入力初期表示
     var s=el('salary'); if(s) s.value=(state.salary||0).toLocaleString('ja-JP');
     var ov=el('overheadSoc'); if(ov) ov.checked=!!state.overheadSoc;
     var md=el('mDays'); if(md) md.value=state.mDays;
@@ -579,6 +799,16 @@
 
     syncUseHoursRange(); syncSalaryRange(); updateVisibility(); updateView();
     initFooter();
+
+    // ヘルプボタン
+    on('helpBtn','click', function(){ startTour(); });
+
+    // 初回オンボーディングバナー
+    var banner = el('tourBanner');
+    var seen=false; try{ seen = !!localStorage.getItem(TUTORIAL_SEEN_KEY); }catch(e){}
+    if(!seen && banner){ banner.style.display='flex'; }
+    on('startTourBtn','click', function(){ if(banner) banner.style.display='none'; startTour(); });
+    on('skipTourBtn','click', function(){ if(banner) banner.style.display='none'; try{ localStorage.setItem(TUTORIAL_SEEN_KEY,'1'); }catch(e){} });
   }
 
   if(document.readyState==='interactive' || document.readyState==='complete'){ init(); }

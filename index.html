@@ -134,7 +134,7 @@ input[type="range"]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 6px rgba(58
 .tour-btn.primary{background:linear-gradient(180deg,var(--accent),var(--accent-strong));color:#fff;border-color:transparent}
 .tour-btn:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
 
-/* Docked tip for small screens or forced dock */
+/* Docked tip only when really necessary */
 .tour-tip.docked{left:8px!important;right:8px!important;bottom:8px!important;top:auto!important;max-width:none}
 
 /* Highlight */
@@ -279,24 +279,25 @@ input[type="range"]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 6px rgba(58
     <a href="https://www.matsumoto-kaikei.or.jp/" target="_blank" rel="noopener license">税理士法人松本会計事務所</a> ｜ 
     <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="license noopener">CC BY-NC-SA 4.0</a> ｜ 
     <a href="/tool-portal/terms.html" target="_blank" rel="noopener">利用条件</a> ｜ 
-    <span id="build-rev">r38</span>（<span id="last-updated-date"></span>）
+    <span id="build-rev">r39</span>（<span id="last-updated-date"></span>）
   </footer>
 </div>
 
 <script>
 (function(){
   'use strict';
-  var VERSION='r38';
+  var VERSION='r39';
   var SOC_RATE=16.0;
   var TUTORIAL_SEEN_KEY='rate_tool_tutorial_seen_v1';
-  var KEY='rate_tool_r38';
-  var initialized=false;
+  var KEY='rate_tool_r39';
+  var initialized=false, justEnded=false;
 
   function el(id){return document.getElementById(id)}
   function on(id,ev,fn){var e=el(id);if(e){e.addEventListener?e.addEventListener(ev,fn,false):e.attachEvent('on'+ev,fn)}}
   function fmtJPY(n){try{return new Intl.NumberFormat('ja-JP',{style:'currency',currency:'JPY',maximumFractionDigits:0}).format(n)}catch(_){try{return '¥'+(Math.round(n)).toLocaleString('ja-JP')}catch(__){return '¥'+String(Math.round(n))}}}
   function clamp(v,min,max){v=Number(v);if(!isFinite(v))return v;if(v<min)return min;if(v>max)return max;return v}
 
+  /* ------------ state ------------ */
   var state={mode:'yearly',salary:4780000,overheadSoc:false,mDays:20,mHoursPerDay:8,mHours:160,yDays:240,yHoursPerDay:8,yHours:1920,useHours:1};
 
   function monthlyHours(){return Number(state.mHours)||0}
@@ -350,6 +351,7 @@ input[type="range"]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 6px rgba(58
     el('baseKind').textContent=state.mode==='monthly'?'月給':state.mode==='yearly'?'年収':'時給';
   }
 
+  /* ------------ formatting & calc ------------ */
   function liveFormatSalary(){
     var input=el('salary');var raw=input.value;var cleaned=raw.replace(/[^\d]/g,'');
     if(cleaned===''){state.salary=0;input.value='';el('salaryRange').value='0';updateView();save();return}
@@ -357,7 +359,6 @@ input[type="range"]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 6px rgba(58
     try{input.setSelectionRange(input.value.length,input.value.length)}catch(_){}
     el('salaryRange').value=String(n);updateView();save();
   }
-
   function recalcMonthly(soft){if(soft===undefined)soft=true;var d=Number(state.mDays);var hpd=parseFloat(state.mHoursPerDay);if(!isFinite(d)||isNaN(hpd))return;
     if(!soft){d=clamp(d,1,31);hpd=clamp(hpd,0.1,24);state.mDays=d;state.mHoursPerDay=hpd;el('mDays').value=String(d);el('mHoursPerDay').value=String(hpd)}
     state.mHours=d*hpd;el('mHours').value=String(state.mHours)}
@@ -365,6 +366,7 @@ input[type="range"]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 6px rgba(58
     if(!soft){d=clamp(d,1,366);hpd=clamp(hpd,0.1,24);state.yDays=d;state.yHoursPerDay=hpd;el('yDays').value=String(d);el('yHoursPerDay').value=String(hpd)}
     state.yHours=d*hpd;el('yHours').value=String(state.yHours)}
 
+  /* ------------ copy & reset & print ------------ */
   function showToast(msg){var t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);setTimeout(function(){t.remove()},1500)}
   function copySummary(){
     var base=state.mode==='monthly'?'月給':state.mode==='yearly'?'年収':'時給';
@@ -382,7 +384,7 @@ input[type="range"]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 6px rgba(58
   function defaultSalaryFor(m){return m==='hourly'?2000:m==='yearly'?4780000:300000}
   function resetSalaryForMode(){state.salary=defaultSalaryFor(state.mode);el('salary').value=state.salary.toLocaleString('ja-JP');syncSalaryRange();el('salaryRange').value=String(state.salary)}
 
-  /* events */
+  /* ------------ events ------------ */
   on('btnMonthly','click',function(){state.mode='monthly';resetSalaryForMode();updateView();save()})
   on('btnYearly','click',function(){state.mode='yearly';resetSalaryForMode();updateView();save()})
   on('btnHourly','click',function(){state.mode='hourly';resetSalaryForMode();updateView();save()})
@@ -414,7 +416,7 @@ input[type="range"]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 6px rgba(58
   var errTimers={}; function showErr(id,msg){var e=el(id);if(!e)return;e.textContent=msg;e.style.display='block';clearTimeout(errTimers[id]);errTimers[id]=setTimeout(function(){e.style.display='none'},2600)}
 
   function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}}
-  function load(){try{var s=JSON.parse(localStorage.getItem(KEY)||localStorage.getItem('rate_tool_r37')||localStorage.getItem('rate_tool_r36')||'null');if(s)state=s}catch(e){}}
+  function load(){try{var s=JSON.parse(localStorage.getItem(KEY)||localStorage.getItem('rate_tool_r38')||localStorage.getItem('rate_tool_r37')||'null');if(s)state=s}catch(e){}}
 
   function initFooter(){
     var y=new Date().getFullYear();var cpy=document.getElementById('cpy-year');if(cpy)cpy.textContent=String(y);
@@ -435,10 +437,9 @@ input[type="range"]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 6px rgba(58
       {ensure:function(){if(state.mode!=='yearly'){state.mode='yearly';setSegment();updateVisibility();updateView();}},sel:'#yearlyBlock',title:'稼働時間（年収ベース）',desc:'年間の稼働日数・1日の労働時間から年間稼働時間が自動計算されます。'},
       {ensure:function(){if(state.mode!=='monthly'){state.mode='monthly';setSegment();updateVisibility();updateView();}},sel:'#monthlyBlock',title:'稼働時間（月給ベース）',desc:'月給の場合は月の稼働日数・1日の労働時間から月間稼働時間が算出されます。'},
       {ensure:function(){if(state.mode!=='yearly'){state.mode='yearly';setSegment();updateVisibility();updateView();}},sel:'#useHoursRange',title:'所要時間の入力',desc:'想定する作業時間（h）をスライダーで指定します。（0.25h=15分）'},
-      {sel:'#hourly',title:'時間単価の確認',desc:'給与÷稼働時間に社保上乗せを反映した「時間単価」と、1分あたりの単価が表示されます。',preferDock:true},
-      {sel:'#cost',title:'所要時間のコスト',desc:'入力した所要時間に応じたコストです。そのコストが月間のコストの場合、右側の（×12）は年間コストに相当します。',preferDock:true},
-      {sel:'.btns',title:'共有・印刷・リセット',desc:'「コピー」で結果サマリをテキスト化、「印刷」で画面全体を出力、「リセット」で既定値に戻せます。',preferDock:true}
-      // ※ 「10. 利用条件とバージョン」は仕様に合わせて削除
+      {sel:'#hourly',title:'時間単価の確認',desc:'給与÷稼働時間に社保上乗せを反映した「時間単価」と、1分あたりの単価が表示されます。'},
+      {sel:'#tileCost',title:'所要時間のコスト',desc:'入力した所要時間に応じたコストです。そのコストが月間のコストの場合、右側の（×12）は年間コストに相当します。'},
+      {sel:'.btns',title:'共有・印刷・リセット',desc:'「コピー」で結果サマリをテキスト化、「印刷」で画面全体を出力、「リセット」で既定値に戻せます。'}
     ]
   };
 
@@ -448,13 +449,13 @@ input[type="range"]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 6px rgba(58
     var el=base;if(!el)return null;
     if(el.tagName==='INPUT' && el.type==='range'){var w=closestOf(el,'.slider-row');if(w)el=w}
     if(el.id==='hourly'){var t=closestOf(el,'#tileHourly');if(t)el=t}
-    if(el.id==='cost'||el.id==='costTimes12'||el.id==='perMin'){var t2=closestOf(el,'#tileCost');if(t2)el=t2}
+    if(el.id==='cost'||el.id==='costTimes12'||el.id==='perMin'||el.id==='tileCost'){var t2=closestOf(el,'#tileCost');if(t2)el=t2}
     return el;
   }
 
   function createOverlay(){
     var o=document.createElement('div');o.className='tour-overlay';o.setAttribute('aria-hidden','false');
-    o.addEventListener('click',function(){ nextStep(); }); // 画面外クリックで次へ
+    o.addEventListener('click',function(){ nextStep(); }); // 背景クリックで次へ
     var t=document.createElement('div');t.className='tour-tip';t.setAttribute('role','dialog');t.setAttribute('aria-live','polite');
     t.innerHTML=[
       '<div class="tour-step" id="tourStepLbl"></div>',
@@ -476,37 +477,51 @@ input[type="range"]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 6px rgba(58
     document.addEventListener('keydown',onTourKeydown);
   }
   function destroyOverlay(){if(tour.tip){tour.tip.remove();tour.tip=null}if(tour.overlay){tour.overlay.remove();tour.overlay=null}window.removeEventListener('resize',positionTip);window.removeEventListener('scroll',positionTip);document.removeEventListener('keydown',onTourKeydown)}
-  function onTourKeydown(e){if(!tour.running)return; if(e.key==='Enter'||e.key==='ArrowRight'){nextStep()} else if(e.key==='ArrowLeft'){prevStep()} else if(e.key==='Escape'){endTour()}}
+  function onTourKeydown(e){
+    if(!tour.running) return;
+    if(e.key==='Enter' || e.key==='ArrowRight'){
+      // 最終STEPでは終了のみ。終了直後のEnter再押下で再起動しない対策も入れる
+      if(tour.idx>=tour.steps.length-1){ endTour(); }
+      else { nextStep(); }
+    }else if(e.key==='ArrowLeft'){ prevStep(); }
+    else if(e.key==='Escape'){ endTour(); }
+  }
   function clearHighlight(){if(tour.targetEl){tour.targetEl.classList.remove('tour-target');tour.targetEl=null}}
   function highlightTarget(sel){
     clearHighlight();var base=qs(sel);var el=resolveHighlightElement(base);if(!el)return null;
     el.classList.add('tour-target');tour.targetEl=el;el.scrollIntoView({behavior:'smooth',block:'center',inline:'nearest'});return el;
   }
 
-  function shouldDock(idx){
-    var small = (window.innerWidth<640)||(window.innerHeight<640);
-    var step = tour.steps[idx]||{};
-    return small || step.preferDock===true;
+  // できる限り対象の「横」に配置（下→上→右→左 の順に試し、入らなければドック）
+  function shouldDock(){
+    return (window.innerWidth<360) || (window.innerHeight<420);
   }
   function positionTip(){
     if(!tour.tip||!tour.targetEl)return;
     var tip=tour.tip; tip.classList.remove('docked');
-    if(shouldDock(tour.idx)){ tip.classList.add('docked'); return; }
+    if(shouldDock()){ tip.classList.add('docked'); return; }
 
     var r=tour.targetEl.getBoundingClientRect(); var pad=10;
-    var top=r.bottom+pad; var left=Math.max(8,Math.min(window.innerWidth-tip.offsetWidth-8,r.left));
-    tip.style.left=left+'px'; tip.style.top=top+'px';
-    // overlap / overflow -> try above, then right -> dock
-    var overflowBottom=top+tip.offsetHeight>window.innerHeight-8;
-    var overlap=!(top>r.bottom+pad||(top+tip.offsetHeight)<r.top-pad) && !(left>r.right || (left+tip.offsetWidth)<r.left);
-    if(overlap||overflowBottom){
-      top=r.top-tip.offsetHeight-pad; tip.style.top=Math.max(8,top)+'px';
-      var overlap2=!(top>r.bottom+pad||(top+tip.offsetHeight)<r.top-pad) && !(left>r.right || (left+tip.offsetWidth)<r.left);
-      if(overlap2){ tip.classList.add('docked'); }
-    }
+    var w=tip.offsetWidth, h=tip.offsetHeight;
+    var placed=false;
+
+    function place(x,y){ tip.style.left=Math.max(8,Math.min(window.innerWidth-w-8,x))+'px';
+                         tip.style.top=Math.max(8,Math.min(window.innerHeight-h-8,y))+'px'; }
+
+    // 下
+    if(r.bottom+pad+h<=window.innerHeight){ place(r.left, r.bottom+pad); placed=true; }
+    // 上
+    if(!placed && r.top-pad-h>=0){ place(r.left, r.top-h-pad); placed=true; }
+    // 右
+    if(!placed && r.right+pad+w<=window.innerWidth){ place(r.right+pad, Math.max(8,r.top)); placed=true; }
+    // 左
+    if(!placed && r.left-pad-w>=0){ place(r.left-w-pad, Math.max(8,r.top)); placed=true; }
+
+    if(!placed){ tip.classList.add('docked'); }
   }
   function showStep(i){
-    tour.idx=i; var step=tour.steps[i]; if(step.ensure)step.ensure();
+    tour.idx=i; var step=tour.steps[i];
+    if(step.ensure)step.ensure();
     highlightTarget(step.sel);
     tour.tip.querySelector('#tourStepLbl').textContent='STEP '+(i+1)+' / '+tour.steps.length;
     tour.tip.querySelector('#tourTitle').textContent=step.title;
@@ -516,19 +531,23 @@ input[type="range"]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 6px rgba(58
   function nextStep(){ if(tour.idx<tour.steps.length-1){showStep(tour.idx+1)} else {endTour()} }
   function prevStep(){ if(tour.idx>0){showStep(tour.idx-1)} }
   function startTour(){
-    if(tour.running)return;
+    if(tour.running || justEnded) return; // 終了直後の誤再起動防止
     tour.snapshot=JSON.parse(JSON.stringify(state)); tour.running=true;
     if(!tour.overlay)createOverlay(); tour.overlay.style.display='block'; tour.tip.style.display='block';
-    showStep(0); // STEP1からスタート
+    showStep(0); // STEP1から
   }
   function endTour(){
-    if(!tour.running)return; tour.running=false;
+    if(!tour.running)return;
+    tour.running=false;
     if(tour.snapshot){state=tour.snapshot;tour.snapshot=null;updateVisibility();setSegment();syncSalaryRange();syncUseHoursRange();updateView()}
-    clearHighlight(); destroyOverlay(); save(); try{localStorage.setItem(TUTORIAL_SEEN_KEY,'1')}catch(e){}
+    clearHighlight(); destroyOverlay(); save();
+    try{localStorage.setItem(TUTORIAL_SEEN_KEY,'1')}catch(e){}
+    // フォーカスを外してEnter連打で再起動しないように
+    if(document.activeElement && document.activeElement.blur){document.activeElement.blur();}
+    justEnded=true; setTimeout(function(){justEnded=false;},600);
   }
 
-  /* init + footer */
-  function load(){try{var s=JSON.parse(localStorage.getItem(KEY)||localStorage.getItem('rate_tool_r37')||localStorage.getItem('rate_tool_r36')||'null');if(s)state=s}catch(e){}}
+  /* ------------ init ------------ */
   function init(){
     if(initialized)return; initialized=true;
     load();
@@ -538,14 +557,7 @@ input[type="range"]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 6px rgba(58
     el('yDays').value=state.yDays; el('yHoursPerDay').value=state.yHoursPerDay; el('yHours').value=state.yHours;
     el('useHours').value=state.useHours;
     syncUseHoursRange(); syncSalaryRange(); updateVisibility(); updateView();
-    (function(){
-      var y=new Date().getFullYear(); var c=el('cpy-year'); if(c)c.textContent=String(y);
-      var d;try{d=new Date(document.lastModified)}catch(_){d=new Date()}
-      if(!(d instanceof Date)||isNaN(d.getTime()))d=new Date();
-      var iso=new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);
-      var lu=el('last-updated-date'); if(lu)lu.textContent=iso;
-      var br=el('build-rev'); if(br)br.textContent=VERSION;
-    })();
+    initFooter();
 
     on('helpBtn','click',function(){startTour()});
     var banner=el('tourBanner'); var seen=false; try{seen=!!localStorage.getItem(TUTORIAL_SEEN_KEY)}catch(e){}

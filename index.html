@@ -90,7 +90,7 @@ input[type="range"]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 6px rgba(58
 .btn.secondary{background:#eef5f9;color:#2384a8;border:1px solid var(--line)}
 .btn.outline{background:#fff;color:#2384a8;border:1px solid var(--accent-strong)}
 .btn:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
-.btns{display:flex;gap:6px;justify-content:flex-end}
+.btns{display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap}
 
 .footer{font-size:11px;color:#6b7280;padding:6px 10px 10px}
 .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:6px}
@@ -262,7 +262,8 @@ input[type="range"]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 6px rgba(58
           </div>
 
           <div class="btns">
-            <button id="copyBtn" class="btn">コピー</button>
+            <button id="toSalesBtn" class="btn">売上換算</button>
+            <button id="copyBtn" class="btn secondary">コピー</button>
             <button id="resetBtn" class="btn secondary">リセット</button>
             <button id="printBtn" class="btn outline">印刷</button>
           </div>
@@ -279,17 +280,24 @@ input[type="range"]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 6px rgba(58
     <a href="https://www.matsumoto-kaikei.or.jp/" target="_blank" rel="noopener license">税理士法人松本会計事務所</a> ｜ 
     <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="license noopener">CC BY-NC-SA 4.0</a> ｜ 
     <a href="/tool-portal/terms.html" target="_blank" rel="noopener">利用条件</a> ｜ 
-    <span id="build-rev">r39</span>（<span id="last-updated-date"></span>）
+    <span id="build-rev">r40</span>（<span id="last-updated-date"></span>）
   </footer>
 </div>
 
 <script>
 (function(){
   'use strict';
-  var VERSION='r39';
+  var VERSION='r40';
   var SOC_RATE=16.0;
   var TUTORIAL_SEEN_KEY='rate_tool_tutorial_seen_v1';
-  var KEY='rate_tool_r39';
+  var KEY='rate_tool_r40';
+
+  // ★ 売上換算ツール連携用（「それ、売上に直すといくらですか？」側と共通のキー名を使用）
+  var MK_SALES_EFFECT_AMOUNT_KEY='mk_salesEffectAmount';
+  var MK_SALES_EFFECT_SOURCE_KEY='mk_salesEffectSource';
+  // ★ 「それ、売上に直すといくらですか？」のURL
+  var SALES_TOOL_URL='https://takatrp.github.io/convert-to-sales/';
+
   var initialized=false, justEnded=false;
 
   function el(id){return document.getElementById(id)}
@@ -372,7 +380,15 @@ input[type="range"]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 6px rgba(58
     var base=state.mode==='monthly'?'月給':state.mode==='yearly'?'年収':'時給';
     var work=state.mode==='monthly'?('稼働時間：'+state.mHours.toLocaleString('ja-JP')+' 時間/月'):
              state.mode==='yearly'?('稼働時間：'+state.yHours.toLocaleString('ja-JP')+' 時間/年'):'稼働時間：—（時給ベース）';
-    var txt=['【時間単価・コスト可視化】','給与ベース：'+base,'対象給与：'+fmtJPY(baseSalary()),'社保上乗せ：'+(state.overheadSoc?('あり（'+SOC_RATE+'%）'):'なし'),work,'時間単価：'+fmtJPY(hourlyRate())+' /h','1分あたり：'+fmtJPY(Math.round(hourlyRate()/60)),'15分：'+fmtJPY(costFor(0.25))+' ／ 30分：'+fmtJPY(costFor(0.5))+' ／ 1時間：'+fmtJPY(costFor(1)),'(ver '+VERSION+')'].join('\n');
+    var txt=['【時間単価・コスト可視化】',
+             '給与ベース：'+base,
+             '対象給与：'+fmtJPY(baseSalary()),
+             '社保上乗せ：'+(state.overheadSoc?('あり（'+SOC_RATE+'%）'):'なし'),
+             work,
+             '時間単価：'+fmtJPY(hourlyRate())+' /h',
+             '1分あたり：'+fmtJPY(Math.round(hourlyRate()/60)),
+             '15分：'+fmtJPY(costFor(0.25))+' ／ 30分：'+fmtJPY(costFor(0.5))+' ／ 1時間：'+fmtJPY(costFor(1)),
+             '(ver '+VERSION+')'].join('\n');
     if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(function(){showToast('コピーしました')}).catch(function(){fallbackCopy(txt)})}else{fallbackCopy(txt)}
   }
   function fallbackCopy(txt){var ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();try{document.execCommand('copy')}catch(e){}ta.remove();showToast('コピーしました')}
@@ -383,6 +399,22 @@ input[type="range"]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 6px rgba(58
     ['err_mDays','err_mHoursPerDay','err_yDays','err_yHoursPerDay'].forEach(function(id){var e=el(id);if(e)e.style.display='none'})}
   function defaultSalaryFor(m){return m==='hourly'?2000:m==='yearly'?4780000:300000}
   function resetSalaryForMode(){state.salary=defaultSalaryFor(state.mode);el('salary').value=state.salary.toLocaleString('ja-JP');syncSalaryRange();el('salaryRange').value=String(state.salary)}
+
+  /* ------------ 売上換算ツールへの連携 ------------ */
+  function jumpToSalesTool(){
+    var useH=Number(state.useHours)||0;
+    var amount=costFor(useH); // 今回の「所要時間のコスト」をそのまま支出額として渡す
+    if(!isFinite(amount) || amount<=0){
+      showToast('所要時間（h）を0より大きく設定してください。');
+      return;
+    }
+    try{
+      localStorage.setItem(MK_SALES_EFFECT_AMOUNT_KEY, String(amount));
+      localStorage.setItem(MK_SALES_EFFECT_SOURCE_KEY, 'jinken'); // 人件費見える化ツール由来
+    }catch(e){}
+    // 同一オリジン内なので、単純遷移でOK
+    window.location.href = SALES_TOOL_URL;
+  }
 
   /* ------------ events ------------ */
   on('btnMonthly','click',function(){state.mode='monthly';resetSalaryForMode();updateView();save()})
@@ -412,11 +444,23 @@ input[type="range"]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 6px rgba(58
   on('copyBtn','click',copySummary);
   on('resetBtn','click',resetAll);
   on('printBtn','click',function(){window.print()});
+  on('toSalesBtn','click',jumpToSalesTool);
 
   var errTimers={}; function showErr(id,msg){var e=el(id);if(!e)return;e.textContent=msg;e.style.display='block';clearTimeout(errTimers[id]);errTimers[id]=setTimeout(function(){e.style.display='none'},2600)}
 
   function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}}
-  function load(){try{var s=JSON.parse(localStorage.getItem(KEY)||localStorage.getItem('rate_tool_r38')||localStorage.getItem('rate_tool_r37')||'null');if(s)state=s}catch(e){}}
+  function load(){
+    try{
+      var s=JSON.parse(
+        localStorage.getItem(KEY) ||
+        localStorage.getItem('rate_tool_r39') ||
+        localStorage.getItem('rate_tool_r38') ||
+        localStorage.getItem('rate_tool_r37') ||
+        'null'
+      );
+      if(s)state=s;
+    }catch(e){}
+  }
 
   function initFooter(){
     var y=new Date().getFullYear();var cpy=document.getElementById('cpy-year');if(cpy)cpy.textContent=String(y);
@@ -439,7 +483,7 @@ input[type="range"]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 6px rgba(58
       {ensure:function(){if(state.mode!=='yearly'){state.mode='yearly';setSegment();updateVisibility();updateView();}},sel:'#useHoursRange',title:'所要時間の入力',desc:'想定する作業時間（h）をスライダーで指定します。（0.25h=15分）'},
       {sel:'#hourly',title:'時間単価の確認',desc:'給与÷稼働時間に社保上乗せを反映した「時間単価」と、1分あたりの単価が表示されます。'},
       {sel:'#tileCost',title:'所要時間のコスト',desc:'入力した所要時間に応じたコストです。そのコストが月間のコストの場合、右側の（×12）は年間コストに相当します。'},
-      {sel:'.btns',title:'共有・印刷・リセット',desc:'「コピー」で結果サマリをテキスト化、「印刷」で画面全体を出力、「リセット」で既定値に戻せます。'}
+      {sel:'.btns',title:'共有・印刷・リセット・売上換算',desc:'コピー／印刷／リセットに加え、「売上換算」でこのコストを別ツールに引き継ぎ、売上ベースでの必要額を試算できます。'}
     ]
   };
 
@@ -450,12 +494,13 @@ input[type="range"]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 6px rgba(58
     if(el.tagName==='INPUT' && el.type==='range'){var w=closestOf(el,'.slider-row');if(w)el=w}
     if(el.id==='hourly'){var t=closestOf(el,'#tileHourly');if(t)el=t}
     if(el.id==='cost'||el.id==='costTimes12'||el.id==='perMin'||el.id==='tileCost'){var t2=closestOf(el,'#tileCost');if(t2)el=t2}
+    if(el.classList && el.classList.contains('btns')){el=el;}
     return el;
   }
 
   function createOverlay(){
     var o=document.createElement('div');o.className='tour-overlay';o.setAttribute('aria-hidden','false');
-    o.addEventListener('click',function(){ nextStep(); }); // 背景クリックで次へ
+    o.addEventListener('click',function(){ nextStep(); });
     var t=document.createElement('div');t.className='tour-tip';t.setAttribute('role','dialog');t.setAttribute('aria-live','polite');
     t.innerHTML=[
       '<div class="tour-step" id="tourStepLbl"></div>',
@@ -466,7 +511,7 @@ input[type="range"]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 6px rgba(58
         '<div class="right"><button class="tour-btn" id="tourSkip">スキップ</button><button class="tour-btn primary" id="tourNext">次へ</button></div>',
       '</div>'
     ].join('');
-    t.addEventListener('click',function(e){ e.stopPropagation(); }); // チップ内クリックは進まない
+    t.addEventListener('click',function(e){ e.stopPropagation(); });
     document.body.appendChild(o);document.body.appendChild(t);
     tour.overlay=o;tour.tip=t;
     t.querySelector('#tourPrev').addEventListener('click',prevStep);
@@ -480,7 +525,6 @@ input[type="range"]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 6px rgba(58
   function onTourKeydown(e){
     if(!tour.running) return;
     if(e.key==='Enter' || e.key==='ArrowRight'){
-      // 最終STEPでは終了のみ。終了直後のEnter再押下で再起動しない対策も入れる
       if(tour.idx>=tour.steps.length-1){ endTour(); }
       else { nextStep(); }
     }else if(e.key==='ArrowLeft'){ prevStep(); }
@@ -492,7 +536,6 @@ input[type="range"]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 6px rgba(58
     el.classList.add('tour-target');tour.targetEl=el;el.scrollIntoView({behavior:'smooth',block:'center',inline:'nearest'});return el;
   }
 
-  // できる限り対象の「横」に配置（下→上→右→左 の順に試し、入らなければドック）
   function shouldDock(){
     return (window.innerWidth<360) || (window.innerHeight<420);
   }
@@ -508,13 +551,9 @@ input[type="range"]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 6px rgba(58
     function place(x,y){ tip.style.left=Math.max(8,Math.min(window.innerWidth-w-8,x))+'px';
                          tip.style.top=Math.max(8,Math.min(window.innerHeight-h-8,y))+'px'; }
 
-    // 下
     if(r.bottom+pad+h<=window.innerHeight){ place(r.left, r.bottom+pad); placed=true; }
-    // 上
     if(!placed && r.top-pad-h>=0){ place(r.left, r.top-h-pad); placed=true; }
-    // 右
     if(!placed && r.right+pad+w<=window.innerWidth){ place(r.right+pad, Math.max(8,r.top)); placed=true; }
-    // 左
     if(!placed && r.left-pad-w>=0){ place(r.left-w-pad, Math.max(8,r.top)); placed=true; }
 
     if(!placed){ tip.classList.add('docked'); }
@@ -531,10 +570,10 @@ input[type="range"]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 6px rgba(58
   function nextStep(){ if(tour.idx<tour.steps.length-1){showStep(tour.idx+1)} else {endTour()} }
   function prevStep(){ if(tour.idx>0){showStep(tour.idx-1)} }
   function startTour(){
-    if(tour.running || justEnded) return; // 終了直後の誤再起動防止
+    if(tour.running || justEnded) return;
     tour.snapshot=JSON.parse(JSON.stringify(state)); tour.running=true;
     if(!tour.overlay)createOverlay(); tour.overlay.style.display='block'; tour.tip.style.display='block';
-    showStep(0); // STEP1から
+    showStep(0);
   }
   function endTour(){
     if(!tour.running)return;
@@ -542,7 +581,6 @@ input[type="range"]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 6px rgba(58
     if(tour.snapshot){state=tour.snapshot;tour.snapshot=null;updateVisibility();setSegment();syncSalaryRange();syncUseHoursRange();updateView()}
     clearHighlight(); destroyOverlay(); save();
     try{localStorage.setItem(TUTORIAL_SEEN_KEY,'1')}catch(e){}
-    // フォーカスを外してEnter連打で再起動しないように
     if(document.activeElement && document.activeElement.blur){document.activeElement.blur();}
     justEnded=true; setTimeout(function(){justEnded=false;},600);
   }

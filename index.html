@@ -280,14 +280,14 @@ input[type="range"]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 6px rgba(58
     <a href="https://www.matsumoto-kaikei.or.jp/" target="_blank" rel="noopener license">税理士法人松本会計事務所</a> ｜ 
     <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="license noopener">CC BY-NC-SA 4.0</a> ｜ 
     <a href="/tool-portal/terms.html" target="_blank" rel="noopener">利用条件</a> ｜ 
-    <span id="build-rev">r40</span>（<span id="last-updated-date"></span>）
+    <span id="build-rev">r41</span>（<span id="last-updated-date"></span>）
   </footer>
 </div>
 
 <script>
 (function(){
   'use strict';
-  var VERSION='r40';
+  var VERSION='r41';
   var SOC_RATE=16.0;
   var TUTORIAL_SEEN_KEY='rate_tool_tutorial_seen_v1';
   var KEY='rate_tool_r40';
@@ -409,11 +409,15 @@ input[type="range"]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 6px rgba(58
       return;
     }
     try{
+      // 旧方式（localStorage）も互換性のために残します
       localStorage.setItem(MK_SALES_EFFECT_AMOUNT_KEY, String(amount));
-      localStorage.setItem(MK_SALES_EFFECT_SOURCE_KEY, 'jinken'); // 人件費見える化ツール由来
+      localStorage.setItem(MK_SALES_EFFECT_SOURCE_KEY, 'jinken');
     }catch(e){}
-    // 同一オリジン内なので、単純遷移でOK
-    window.location.href = SALES_TOOL_URL;
+    
+    // 新方式：URLパラメータで金額とソース情報を渡して遷移
+    // source=time-unit-cost とすることで、遷移先で特定のメッセージを表示させます
+    var nextUrl = SALES_TOOL_URL + '?amount=' + amount + '&source=time-unit-cost';
+    window.location.href = nextUrl;
   }
 
   /* ------------ events ------------ */
@@ -507,8 +511,8 @@ input[type="range"]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 6px rgba(58
       '<h4 id="tourTitle"></h4>',
       '<p id="tourDesc"></p>',
       '<div class="tour-ctrl">',
-        '<div class="left"><button class="tour-btn" id="tourPrev">前へ</button></div>',
-        '<div class="right"><button class="tour-btn" id="tourSkip">スキップ</button><button class="tour-btn primary" id="tourNext">次へ</button></div>',
+      '<div class="left"><button class="tour-btn" id="tourPrev">前へ</button></div>',
+      '<div class="right"><button class="tour-btn" id="tourSkip">スキップ</button><button class="tour-btn primary" id="tourNext">次へ</button></div>',
       '</div>'
     ].join('');
     t.addEventListener('click',function(e){ e.stopPropagation(); });
@@ -549,7 +553,7 @@ input[type="range"]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 6px rgba(58
     var placed=false;
 
     function place(x,y){ tip.style.left=Math.max(8,Math.min(window.innerWidth-w-8,x))+'px';
-                         tip.style.top=Math.max(8,Math.min(window.innerHeight-h-8,y))+'px'; }
+                        tip.style.top=Math.max(8,Math.min(window.innerHeight-h-8,y))+'px'; }
 
     if(r.bottom+pad+h<=window.innerHeight){ place(r.left, r.bottom+pad); placed=true; }
     if(!placed && r.top-pad-h>=0){ place(r.left, r.top-h-pad); placed=true; }

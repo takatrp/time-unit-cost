@@ -1,6 +1,6 @@
 <!DOCTYPE html>
-<!-- internal version: r42
-  - 左上ロゴのリンク先をツールポータルに変更
+<!-- internal version: r43
+  - 下部固定ナビ「次へ→」でも売上換算へ金額引継ぎできるよう mkNavBeforeNext フックを追加
 -->
 <html lang="ja">
 <head>
@@ -115,7 +115,7 @@ input[type="range"]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 6px rgba(58
   .card{box-shadow:none}
   .btns{display:none}
   .mk-mini{border-top:none}
-  #tourBanner,.tour-overlay,.tour-tip{display:none!important}
+  #tourBanner,.tour-overlay,.tour-tip,.mk-nav{display:none!important}
 }
 
 /* --- Tutorial --- */
@@ -148,8 +148,8 @@ input[type="range"]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 6px rgba(58
 <body>
 <div class="container">
   <header>
-    <a class="logo-link" href="https://takatrp.github.io/tool-portal/" target="_blank" rel="noopener" aria-label="税理士法人松本会計事務所 公式サイト">
-      <img src="ロゴ.jpg" alt="松本会計ロゴ" class="logo"/>
+    <a class="logo-link" href="https://takatrp.github.io/tool-portal/" target="_blank" rel="noopener" aria-label="松本会計ツールポータルへ">
+      <img src="ロゴ.jpg" alt="松本会計ロゴ" class="logo" onerror="this.onerror=null;this.src='ロゴ.png';"/>
     </a>
     <h1>人件費見える化ツール</h1>
     <div class="header-actions">
@@ -283,14 +283,14 @@ input[type="range"]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 6px rgba(58
     <a href="https://www.matsumoto-kaikei.or.jp/" target="_blank" rel="noopener license">税理士法人松本会計事務所</a> ｜ 
     <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="license noopener">CC BY-NC-SA 4.0</a> ｜ 
     <a href="/tool-portal/terms.html" target="_blank" rel="noopener">利用条件</a> ｜ 
-    <span id="build-rev">r42</span>（<span id="last-updated-date"></span>）
+    <span id="build-rev">r43</span>（<span id="last-updated-date"></span>）
   </footer>
 </div>
 
 <script>
 (function(){
   'use strict';
-  var VERSION='r42';
+  var VERSION='r43';
   var SOC_RATE=16.0;
   var TUTORIAL_SEEN_KEY='rate_tool_tutorial_seen_v1';
   var KEY='rate_tool_r40';
@@ -403,25 +403,54 @@ input[type="range"]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 6px rgba(58
   function defaultSalaryFor(m){return m==='hourly'?2000:m==='yearly'?4780000:300000}
   function resetSalaryForMode(){state.salary=defaultSalaryFor(state.mode);el('salary').value=state.salary.toLocaleString('ja-JP');syncSalaryRange();el('salaryRange').value=String(state.salary)}
 
-  /* ------------ 売上換算ツールへの連携 ------------ */
-  function jumpToSalesTool(){
-    var useH=Number(state.useHours)||0;
-    var amount=costFor(useH); // 今回の「所要時間のコスト」をそのまま支出額として渡す
-    if(!isFinite(amount) || amount<=0){
+  /* ------------ 売上換算ツールへの連携（ボタン＆下部ナビ共通） ------------ */
+  function buildSalesUrl(amount){
+    var u = new URL(SALES_TOOL_URL);
+    u.searchParams.set('amount', String(amount));
+    u.searchParams.set('source', 'time-unit-cost');
+    return u.toString();
+  }
+
+  function prepareSalesHandoff(){
+    var useH = Number(state.useHours) || 0;
+    var amount = costFor(useH); // 「所要時間のコスト」を支出額として渡す
+
+    if(!isFinite(amount) || amount <= 0){
       showToast('所要時間（h）を0より大きく設定してください。');
-      return;
+      return null;
     }
+
     try{
-      // 旧方式（localStorage）も互換性のために残します
       localStorage.setItem(MK_SALES_EFFECT_AMOUNT_KEY, String(amount));
       localStorage.setItem(MK_SALES_EFFECT_SOURCE_KEY, 'jinken');
     }catch(e){}
-    
-    // 新方式：URLパラメータで金額とソース情報を渡して遷移
-    // source=time-unit-cost とすることで、遷移先で特定のメッセージを表示させます
-    var nextUrl = SALES_TOOL_URL + '?amount=' + amount + '&source=time-unit-cost';
+
+    return buildSalesUrl(amount);
+  }
+
+  function jumpToSalesTool(){
+    var nextUrl = prepareSalesHandoff();
+    if(!nextUrl) return;
     window.location.href = nextUrl;
   }
+
+  // mk-nav.js（下部固定ナビ）から呼べるフック
+  window.mkNavBeforeNext = function(ctx){
+    try{
+      var nextUrl = (ctx && ctx.nextUrl) ? ctx.nextUrl : (typeof ctx === 'string' ? ctx : '');
+      if(!nextUrl) return;
+
+      var u = new URL(nextUrl, location.href);
+      if(!u.pathname.includes('/convert-to-sales')) return; // 売上換算以外は干渉しない
+
+      var salesUrl = prepareSalesHandoff();
+      if(!salesUrl) return { cancel:true };
+
+      return { href: salesUrl };
+    }catch(e){
+      return;
+    }
+  };
 
   /* ------------ events ------------ */
   on('btnMonthly','click',function(){state.mode='monthly';resetSalaryForMode();updateView();save()})
@@ -615,6 +644,7 @@ input[type="range"]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 6px rgba(58
   window.addEventListener('DOMContentLoaded',init,false);
 })();
 </script>
-  <script src="https://takatrp.github.io/tool-portal/mk-nav.js" defer></script>
+
+<script src="https://takatrp.github.io/tool-portal/mk-nav.js" defer></script>
 </body>
 </html>

@@ -15,8 +15,8 @@
 <style>
 :root{
   --bg:#f5f8fb; --card:#fff; --ink:#1f2937; --muted:#6b7280;
-  --accent:#3aa2c8; --accent-strong:#2384a8; --line:#e7eef3;
-  --overlay:rgba(15,23,42,.28); --focus:rgba(58,162,200,.45);
+  --accent:#3a9db0; --accent-strong:#2b7f92; --line:#e7eef3;
+  --overlay:rgba(15,23,42,.28); --focus:rgba(58,157,176,.45);
 }
 *{box-sizing:border-box}
 html,body{height:100%}
@@ -31,7 +31,7 @@ h1{font-weight:700;letter-spacing:.3px;line-height:1.05;white-space:nowrap;overf
 @media (orientation:portrait){ h1{font-size:clamp(18px,5.6vw,22px);} }
 .header-actions{display:flex;gap:6px;align-items:center}
 .help-btn{display:inline-flex;align-items:center;gap:6px;padding:6px 9px;border-radius:9px;border:1px solid var(--line);background:#f3f7fb;color:#0f172a;cursor:pointer;font-weight:700;font-size:13.5px}
-.help-btn:focus-visible{outline:3px solid var(--focus);outline-offset:2px;box-shadow:0 0 0 6px rgba(58,162,200,.18)}
+.help-btn:focus-visible{outline:3px solid var(--focus);outline-offset:2px;box-shadow:0 0 0 6px rgba(58,157,176,.18)}
 
 /* layout */
 .grid{display:grid;grid-template-columns:1fr;gap:10px}
@@ -54,7 +54,7 @@ input[type="text"],input[type="number"],select{
   background:#f9fbfd;outline:none;transition:border .15s,box-shadow .15s,background .15s;
 }
 input[type="text"]:focus-visible,input[type="number"]:focus-visible,select:focus-visible{
-  border-color:var(--accent);box-shadow:0 0 0 3px rgba(58,162,200,.18);background:#fff;
+  border-color:var(--accent);box-shadow:0 0 0 3px rgba(58,157,176,.18);background:#fff;
   outline:3px solid var(--focus);outline-offset:2px;
 }
 
@@ -66,8 +66,8 @@ input[type="range"]::-moz-range-track{height:6px;background:linear-gradient(90de
 input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:18px;height:18px;border-radius:50%;background:#fff;border:3px solid var(--accent-strong);margin-top:-6px;box-shadow:0 2px 6px rgba(0,0,0,.15);transition:box-shadow .15s,transform .15s,border-color .15s}
 input[type="range"]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:#fff;border:3px solid var(--accent-strong);box-shadow:0 2px 6px rgba(0,0,0,.15);transition:box-shadow .15s,transform .15s,border-color .15s}
 input[type="range"]:focus-visible{outline:3px solid var(--focus);outline-offset:3px}
-input[type="range"]:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 6px rgba(58,162,200,.25),0 2px 8px rgba(0,0,0,.3);transform:scale(1.05);border-color:#30a0c3}
-input[type="range"]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 6px rgba(58,162,200,.25),0 2px 8px rgba(0,0,0,.3);transform:scale(1.05);border-color:#30a0c3}
+input[type="range"]:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 6px rgba(58,157,176,.25),0 2px 8px rgba(0,0,0,.3);transform:scale(1.05);border-color:#3490a3}
+input[type="range"]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 6px rgba(58,157,176,.25),0 2px 8px rgba(0,0,0,.3);transform:scale(1.05);border-color:#3490a3}
 
 /* segment */
 .seg{display:flex;gap:6px}
@@ -80,9 +80,9 @@ input[type="range"]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 6px rgba(58
 .tile{border:1px solid var(--line);border-radius:9px;padding:8px;background:linear-gradient(180deg,#fff 0%,#f7fbfe 100%)}
 .tile h3{margin:0 0 3px 0;font-size:12.5px;color:var(--muted)}
 .main-figure{font-size:24px;font-weight:600;letter-spacing:.2px;color:var(--accent-strong);border-radius:8px;padding:2px 4px}
-.main-figure:focus-visible,.permin b:focus-visible,.accent-chip:focus-visible{outline:3px solid var(--focus);outline-offset:3px;box-shadow:0 0 0 6px rgba(58,162,200,.2);background:linear-gradient(180deg,#fff 0%,#eef8fc 100%)}
+.main-figure:focus-visible,.permin b:focus-visible,.accent-chip:focus-visible{outline:3px solid var(--focus);outline-offset:3px;box-shadow:0 0 0 6px rgba(58,157,176,.2);background:linear-gradient(180deg,#fff 0%,#eef8fc 100%)}
 .figure-row{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
-.accent-chip{font-size:13px;font-weight:700;color:var(--accent-strong);background:rgba(58,162,200,.12);border:1px solid rgba(35,132,168,.36);padding:3px 8px;border-radius:999px;white-space:nowrap}
+.accent-chip{font-size:13px;font-weight:700;color:var(--accent-strong);background:rgba(58,157,176,.12);border:1px solid rgba(43,127,146,.36);padding:3px 8px;border-radius:999px;white-space:nowrap}
 
 /* 1分あたり強調 */
 .permin{margin-top:2px;font-weight:700;color:var(--accent-strong);display:inline-flex;align-items:baseline;gap:6px}
@@ -90,8 +90,8 @@ input[type="range"]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 6px rgba(58
 
 /* buttons */
 .btn{display:inline-flex;gap:6px;align-items:center;padding:7px 10px;background:linear-gradient(180deg,var(--accent),var(--accent-strong));border:none;color:#fff;border-radius:9px;cursor:pointer;font-weight:700}
-.btn.secondary{background:#eef5f9;color:#2384a8;border:1px solid var(--line)}
-.btn.outline{background:#fff;color:#2384a8;border:1px solid var(--accent-strong)}
+.btn.secondary{background:#eef5f9;color:var(--accent-strong);border:1px solid var(--line)}
+.btn.outline{background:#fff;color:var(--accent-strong);border:1px solid var(--accent-strong)}
 .btn:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
 .btns{display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap}
 
@@ -121,7 +121,7 @@ input[type="range"]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 6px rgba(58
 /* --- Tutorial --- */
 #tourBanner{display:none;margin:6px 0 10px 0;padding:8px 10px;border:1px solid var(--line);background:#f0f7fb;border-radius:10px;font-size:13px;color:#0f172a;align-items:center;justify-content:space-between;gap:8px}
 #tourBanner .actions{display:flex;gap:8px}
-#tourBanner button{padding:6px 9px;border-radius:8px;border:1px solid var(--accent-strong);background:#fff;color:#2384a8;font-weight:700;cursor:pointer}
+#tourBanner button{padding:6px 9px;border-radius:8px;border:1px solid var(--accent-strong);background:#fff;color:var(--accent-strong);font-weight:700;cursor:pointer}
 #tourBanner .skip{border-color:var(--line);color:#334155}
 
 .tour-overlay{position:fixed;inset:0;background:var(--overlay);backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
@@ -142,7 +142,7 @@ input[type="range"]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 6px rgba(58
 
 /* Highlight */
 .tour-target{position:relative;z-index:10010!important;border-radius:12px;background:#fff!important;
-  box-shadow:0 0 0 6px rgba(58,162,200,.38),0 12px 42px rgba(0,0,0,.35)!important}
+  box-shadow:0 0 0 6px rgba(58,157,176,.38),0 12px 42px rgba(0,0,0,.35)!important}
 </style>
 </head>
 <body>

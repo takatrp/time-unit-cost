@@ -192,9 +192,10 @@ input[type="range"]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 6px rgba(58
         <div class="row">
           <div class="label"><span id="salaryLabel">年収（税引前）</span></div>
           <div class="slider-row">
-            <input id="salary" type="text" inputmode="numeric" placeholder="例：4,780,000" value="4,780,000"/>
+            <input id="salary" type="text" inputmode="numeric" placeholder="例：4,870,000" value="4,870,000"/>
             <input id="salaryRange" type="range" min="1000000" max="30000000" step="10000"/>
           </div>
+          <div class="help">年収の初期値は国税庁「<a href="https://www.nta.go.jp/publication/statistics/kokuzeicho/minkan/gaiyou/2025.htm" target="_blank" rel="noopener">令和7年分民間給与実態統計調査</a>」の平均給与487万円です（必要に応じて変更してください）。</div>
         </div>
 
         <div class="row">
@@ -317,7 +318,7 @@ input[type="range"]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 6px rgba(58
   function clamp(v,min,max){v=Number(v);if(!isFinite(v))return v;if(v<min)return min;if(v>max)return max;return v}
 
   /* ------------ state ------------ */
-  var state={mode:'yearly',salary:4780000,overheadSoc:false,mDays:20,mHoursPerDay:8,mHours:160,yDays:240,yHoursPerDay:8,yHours:1920,useHours:1};
+  var state={mode:'yearly',salary:4870000,overheadSoc:false,mDays:20,mHoursPerDay:8,mHours:160,yDays:240,yHoursPerDay:8,yHours:1920,useHours:1};
 
   function monthlyHours(){return Number(state.mHours)||0}
   function yearlyHours(){return Number(state.yHours)||0}
@@ -403,12 +404,12 @@ input[type="range"]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 6px rgba(58
     if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(function(){showToast('コピーしました')}).catch(function(){fallbackCopy(txt)})}else{fallbackCopy(txt)}
   }
   function fallbackCopy(txt){var ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();try{document.execCommand('copy')}catch(e){}ta.remove();showToast('コピーしました')}
-  function resetAll(){state={mode:'yearly',salary:4780000,overheadSoc:false,mDays:20,mHoursPerDay:8,mHours:160,yDays:240,yHoursPerDay:8,yHours:1920,useHours:1};
-    el('salary').value='4,780,000';el('overheadSoc').checked=false;el('mDays').value='20';el('mHoursPerDay').value='8';el('mHours').value='160';
+  function resetAll(){state={mode:'yearly',salary:4870000,overheadSoc:false,mDays:20,mHoursPerDay:8,mHours:160,yDays:240,yHoursPerDay:8,yHours:1920,useHours:1};
+    el('salary').value='4,870,000';el('overheadSoc').checked=false;el('mDays').value='20';el('mHoursPerDay').value='8';el('mHours').value='160';
     el('yDays').value='240';el('yHoursPerDay').value='8';el('yHours').value='1920';el('useHours').value='1.0';
     syncUseHoursRange();syncSalaryRange();updateView();save();showToast('リセットしました');
     ['err_mDays','err_mHoursPerDay','err_yDays','err_yHoursPerDay'].forEach(function(id){var e=el(id);if(e)e.style.display='none'})}
-  function defaultSalaryFor(m){return m==='hourly'?2000:m==='yearly'?4780000:300000}
+  function defaultSalaryFor(m){return m==='hourly'?2000:m==='yearly'?4870000:300000}
   function resetSalaryForMode(){state.salary=defaultSalaryFor(state.mode);el('salary').value=state.salary.toLocaleString('ja-JP');syncSalaryRange();el('salaryRange').value=String(state.salary)}
 
   /* ------------ 売上換算ツールへの連携（ボタン＆下部ナビ共通） ------------ */

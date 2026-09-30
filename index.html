@@ -201,7 +201,7 @@ input[type="range"]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 6px rgba(58
         <div class="row">
           <div class="label">社保上乗せ</div>
           <div class="switch">
-            <input id="overheadSoc" type="checkbox"/>
+            <input id="overheadSoc" type="checkbox" checked/>
             <label for="overheadSoc" class="help">社会保険の<b>事業主負担</b>を上乗せ（標準率を適用）</label>
           </div>
         </div>
@@ -318,7 +318,7 @@ input[type="range"]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 6px rgba(58
   function clamp(v,min,max){v=Number(v);if(!isFinite(v))return v;if(v<min)return min;if(v>max)return max;return v}
 
   /* ------------ state ------------ */
-  var state={mode:'yearly',salary:4870000,overheadSoc:false,mDays:20,mHoursPerDay:8,mHours:160,yDays:240,yHoursPerDay:8,yHours:1920,useHours:1};
+  var state={mode:'yearly',salary:4870000,overheadSoc:true,mDays:20,mHoursPerDay:8,mHours:160,yDays:240,yHoursPerDay:8,yHours:1920,useHours:1};
 
   function monthlyHours(){return Number(state.mHours)||0}
   function yearlyHours(){return Number(state.yHours)||0}
@@ -404,8 +404,8 @@ input[type="range"]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 6px rgba(58
     if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(function(){showToast('コピーしました')}).catch(function(){fallbackCopy(txt)})}else{fallbackCopy(txt)}
   }
   function fallbackCopy(txt){var ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();try{document.execCommand('copy')}catch(e){}ta.remove();showToast('コピーしました')}
-  function resetAll(){state={mode:'yearly',salary:4870000,overheadSoc:false,mDays:20,mHoursPerDay:8,mHours:160,yDays:240,yHoursPerDay:8,yHours:1920,useHours:1};
-    el('salary').value='4,870,000';el('overheadSoc').checked=false;el('mDays').value='20';el('mHoursPerDay').value='8';el('mHours').value='160';
+  function resetAll(){state={mode:'yearly',salary:4870000,overheadSoc:true,mDays:20,mHoursPerDay:8,mHours:160,yDays:240,yHoursPerDay:8,yHours:1920,useHours:1};
+    el('salary').value='4,870,000';el('overheadSoc').checked=true;el('mDays').value='20';el('mHoursPerDay').value='8';el('mHours').value='160';
     el('yDays').value='240';el('yHoursPerDay').value='8';el('yHours').value='1920';el('useHours').value='1.0';
     syncUseHoursRange();syncSalaryRange();updateView();save();showToast('リセットしました');
     ['err_mDays','err_mHoursPerDay','err_yDays','err_yHoursPerDay'].forEach(function(id){var e=el(id);if(e)e.style.display='none'})}
